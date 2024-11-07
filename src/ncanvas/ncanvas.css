@@ -1,0 +1,23 @@
+.n-canvas-root{
+    display:flex;
+    height:100%;
+    gap:1em;
+}
+.n-canvas-controls{
+    width:20em;
+    display:flex;
+    flex-direction: column;
+    gap:0.5em;
+}
+.n-canvas-canvas-host {
+    height:100%;
+    width:100%;
+    position:relative;
+    flex-grow: 1;
+}
+.n-canvas-canvas{
+    width:100%;
+    height:calc(100% - 3px);
+    background-color: grey;
+    user-select: none;
+}

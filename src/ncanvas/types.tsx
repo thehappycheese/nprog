@@ -22,6 +22,7 @@ export interface GraphNode {
     id: string;
     title: string;
     position: Vector2;
+    size: Vector2;
     components: NodeComponent[];
 }
 
