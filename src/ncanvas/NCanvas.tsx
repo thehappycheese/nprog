@@ -6,10 +6,13 @@ import { ActionCreators } from "redux-undo";
 import * as Vector2 from "./Vector2";
 import { MouseToolModeControls } from "./components/MouseToolModeControls";
 import { hit_test_nodes } from "./util";
+import { default_style } from "./draw/style";
+import { draw_node_body_and_title_bar } from "./draw/node_body_and_title_bar";
 
 
 type ActiveItem = {
-    type: "none"
+    type: "none",
+    target_id: null,
 } | {
     type: "hover_node",
     target_id: string
@@ -43,7 +46,18 @@ export function NCanvas() {
     const [mouse_down, set_mouse_down] = useState(false);
     const [mouse_just_down, set_mouse_just_down] = useState(false);
 
-    const [active_item, set_active_item] = useState<ActiveItem>({ type: "none" });
+    const [active_item, set_active_item] = useState<ActiveItem>({ type: "none" , target_id:null});
+    const [selected_items, set_selected_items] = useState<
+        Array<{
+            type:"node",
+            id:string,
+        }>
+    >([
+        {
+            type:"node",
+            id:"node-0",
+        }
+    ])
 
     // DOM REFS
     const canvas_ref = useRef<HTMLCanvasElement | null>(null);
@@ -118,6 +132,7 @@ export function NCanvas() {
             }else{
                 set_active_item({
                     type:"none",
+                    target_id:null,
                 })
             }
         }
@@ -149,24 +164,24 @@ export function NCanvas() {
             // console.log("canvas host unmounted")
         }
     }, [set_canvas_resize_counter]);
-
     // CANVAS RENDER
     if (canvas_ref.current) {
         const canvas = canvas_ref.current;
         const ctx = canvas.getContext("2d")!;
-
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (const node of nodes) {
-            let node_body_color = "#333";
-            if (
-                active_item?.type === "hover_node"
-                && active_item.target_id === node.id
-            ) {
-                node_body_color = "yellow";
+            const style = default_style(); 
+            let is_active_item = active_item.target_id === node.id;
+            let is_active        = is_active_item && active_item.type === "hover_node";
+            let is_being_dragged = is_active_item && active_item.type === "drag_node";
+
+
+            if (is_active) {
+                style.body.backgroundColor = style.body.highlight;
+                style.border.color = style.body.highlight;
             }
-            ctx.fillStyle = node_body_color;
             let node_position = node.position;
-            if(active_item.type==="drag_node" && active_item.target_id===node.id){
+            if(is_being_dragged){
                 node_position = Vector2.add(
                     node.position,
                     Vector2.sub(
@@ -175,28 +190,16 @@ export function NCanvas() {
                     )
                 );
             }
-            ctx.fillRect(
-                node_position.x,
-                node_position.y,
-                node.size.x,
-                node.size.y
-            )
-            ctx.fillStyle = "#be2840" // TODO: define pallet brand-accent
-            ctx.fillRect(
-                node_position.x,
-                node_position.y,
-                node.size.x,
-                14
-            )
-            ctx.textBaseline="top"
-            ctx.font = "12px sans-serif";
-            ctx.fillStyle = "white"
-            ctx.fillText(
+            draw_node_body_and_title_bar(
+                ctx,
+                node_position,
+                node.size,
                 node.title,
-                node_position.x+2,
-                node_position.y+2,
-                node.size.x
+                style
             )
+
+
+
         }
     }
 
@@ -225,6 +228,36 @@ export function NCanvas() {
                 onPointerUp={handle_canvas_pointer_event}
                 onPointerOut={handle_canvas_pointer_event}
             />
+            {
+                nodes.map(node=>{
+                    let style = default_style();
+                    let is_active_item   = active_item.target_id === node.id;
+                    let is_active        = is_active_item && active_item.type === "hover_node";
+                    let is_being_dragged = is_active_item && active_item.type === "drag_node";
+                    let node_position = node.position;
+                    if(is_being_dragged){
+                        node_position = Vector2.add(
+                            node.position,
+                            Vector2.sub(
+                                mouse_position,
+                                mouse_down_position
+                            )
+                        );
+                    }
+                    return <div
+                        style={{
+                            position: "absolute",
+                            left: node_position.x + "px",
+                            top : node_position.y+style.title.height + "px",
+                            //backgroundColor:"#FF00FF99",
+                            width:node.size.x+"px",
+                            height:node.size.y-style.title.height+"px",
+                            padding:"5px"
+                        }}
+                        key={node.id}
+                    >node.title</div>
+                })
+            }
         </div>
     </div>
 }

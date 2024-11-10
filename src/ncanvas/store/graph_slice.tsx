@@ -5,8 +5,13 @@ import * as Vector2 from '../Vector2';
 export interface GraphState {
     nodes: Array<GraphNode>;
     edges: Array<GraphEdge>;
+    selected:Array<SelectionItem>
 }
 
+export interface SelectionItem {
+    type:"node"|"edge",
+    id:string,
+}
 const initialState: GraphState = {
     nodes: [
         {
@@ -27,6 +32,7 @@ const initialState: GraphState = {
 
     ],
     edges: [],
+    selected:[]
 };
 
 const graph_slice = createSlice({
@@ -46,10 +52,15 @@ const graph_slice = createSlice({
             }else{
                 throw new Error("Why you ask to move node that not exist eh?")
             }
+        },
+        select: (state, action:PayloadAction<SelectionItem>)=>{
+            if (state.selected.findIndex(item=>item.type===action.payload.type && item.id===action.payload.id)===-1){
+                state.selected.push(action.payload)
+            }
+        },
+        deselect: (state, action:PayloadAction<SelectionItem>)=>{
+            state.selected = state.selected.filter(item=>!(item.type===action.payload.type && item.id===action.payload.id));
         }
-        //removeNode
-        //removeEdge
-        //connect
     },
 });
 

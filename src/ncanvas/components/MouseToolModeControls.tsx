@@ -6,7 +6,7 @@ export function MouseToolModeControls() {
     const mouse_tool_mode = useSelector<RootState, MouseToolMode>(state => state.mouse_tool_mode);
     const dispatch = useDispatch();
 
-    return <div>
+    return <div className="grid grid-cols-3">
         <button onClick={() => dispatch(actions.setMouseToolModeSelect())}>Select</button>
         <button onClick={() => dispatch(actions.setMouseToolModeAddNode())}>Add</button>
         <button onClick={() => dispatch(actions.setMouseToolModeDeleteNode())}>Remove</button>

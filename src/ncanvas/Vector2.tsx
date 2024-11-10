@@ -16,8 +16,11 @@ export function sub(a: Vector2, b: Vector2): Vector2 {
 export function neg(a: Vector2): Vector2 {
     return { x: -a.x, y: -a.y };
 }
-export function scale(a: Vector2, scalar: number): Vector2 {
-    return { x: a.x * scalar, y: a.y * scalar };
+export function scale(a: Vector2, multiplier: number): Vector2 {
+    return { x: a.x * multiplier, y: a.y * multiplier };
+}
+export function descale(a: Vector2, divisor: number): Vector2 {
+    return { x: a.x / divisor, y: a.y / divisor };
 }
 export function left(a: Vector2): Vector2 {
     return { x: -a.y, y: a.x };
