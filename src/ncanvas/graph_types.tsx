@@ -1,20 +1,16 @@
-// Assuming Vector2 is something like this:
-export interface Vector2 {
-    x: number;
-    y: number;
-}
+import { Vector2 } from "./Vector2";
 
 // Define a Handle, which represents connection points on nodes
 export interface Handle {
     id: string;
-    type: 'input' | 'output'; // 'input' for receiving data, 'output' for sending data
+    type: 'input' | 'output';
 }
 
 // Define a NodeComponent to represent functional components within each node
 export interface NodeComponent {
     id: string;
-    type: string; // e.g., 'math', 'color', 'transform', etc.
-    handles: Handle[]; // Components have handles for connecting edges
+    type: string;
+    handles: Handle[];
 }
 
 // Node interface representing each node on the graph
@@ -23,7 +19,7 @@ export interface GraphNode {
     title: string;
     position: Vector2;
     size: Vector2;
-    components: NodeComponent[];
+    components: Array<NodeComponent>;
 }
 
 // Edge interface representing the connections between nodes

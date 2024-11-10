@@ -1,21 +1,40 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import storage from 'redux-persist/lib/storage';
-import { persistReducer, persistStore } from 'redux-persist';
+import { FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, REHYDRATE } from 'redux-persist';
 import undoable from 'redux-undo';
-import graphReducer from './graph_slice';
 
-const persistConfig = {
-  key: 'root',
-  storage,
-};
+import * as graph_slice from './graph_slice';
+import * as mouse_tool_mode_slice from './mouse_tool_mode';
 
-const persistedReducer = persistReducer(persistConfig, undoable(graphReducer));
+
+const persisted_reducer = persistReducer(
+    {
+        key: 'root',
+        whitelist: ["graph"],
+        storage,
+    },
+    combineReducers({
+        graph: undoable(graph_slice.reducer),
+        mouse_tool_mode: mouse_tool_mode_slice.reducer
+    })
+);
 
 export const store = configureStore({
-  reducer: persistedReducer,
+    reducer: persisted_reducer,
+    devTools: true,
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+            serializableCheck: {
+                ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+            },
+        }),
 });
 
-export const persistor = persistStore(store);
-
+export const persistent_store = persistStore(store);
+export const actions = {
+    graph:graph_slice.actions,
+    mouse_tool_mode:mouse_tool_mode_slice.actions
+};
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+

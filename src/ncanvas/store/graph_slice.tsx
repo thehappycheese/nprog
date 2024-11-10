@@ -1,28 +1,57 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { GraphNode, GraphEdge } from '../types';
+import { GraphNode, GraphEdge } from '../graph_types';
+import * as Vector2 from '../Vector2';
 
-interface GraphState {
+export interface GraphState {
     nodes: Array<GraphNode>;
     edges: Array<GraphEdge>;
 }
 
 const initialState: GraphState = {
-    nodes: [],
+    nodes: [
+        {
+            id:"node-0",
+            title:"input",
+            position:{x:50, y:50},
+            size:{x:150, y:50},
+            components:[],
+        },
+
+        {
+            id:"node-1",
+            title:"output",
+            position:{x:250, y:130},
+            size:{x:150, y:50},
+            components:[],
+        },
+
+    ],
     edges: [],
 };
 
-const graphSlice = createSlice({
+const graph_slice = createSlice({
     name: 'graph',
     initialState,
     reducers: {
-        addNode: (state, action: PayloadAction<GraphNode>) => {
+        add_node: (state, action: PayloadAction<GraphNode>) => {
             state.nodes.push(action.payload);
         },
-        addEdge: (state, action: PayloadAction<GraphEdge>) => {
+        add_edge: (state, action: PayloadAction<GraphEdge>) => {
             state.edges.push(action.payload);
         },
+        offset_node: (state, action:PayloadAction<{id:string, offset:Vector2.Vector2}>)=>{
+            let node = state.nodes.find(item=>item.id==action.payload.id);
+            if(node){
+                node.position = Vector2.add(node.position, action.payload.offset);
+            }else{
+                throw new Error("Why you ask to move node that not exist eh?")
+            }
+        }
+        //removeNode
+        //removeEdge
+        //connect
     },
 });
 
-export const { addNode, addEdge } = graphSlice.actions;
-export default graphSlice.reducer;
+export const actions = graph_slice.actions;
+export const reducer = graph_slice.reducer;

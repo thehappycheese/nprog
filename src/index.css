@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   font-family: sans-serif;
   color:white;
@@ -14,6 +18,34 @@ body {
     margin:0;
     padding:0.8em;
     min-width: 320px;
-    height: calc(100% - 1.6em);
-    background-color: #1a1a1a;
+    height: 100%;
+    @apply bg-level-0;
+}
+button{
+    @apply bg-brand-accent rounded-sm p-1;
+}
+
+.n-canvas-root{
+    display:flex;
+    height:100%;
+    gap:1em;
+}
+.n-canvas-controls{
+    width:20em;
+    display:flex;
+    flex-direction: column;
+    gap:0.5em;
+    overflow-y: auto;
+}
+.n-canvas-canvas-host {
+    height:100%;
+    width:100%;
+    position:relative;
+    flex-grow: 1;
+}
+.n-canvas-canvas{
+    width:100%;
+    height:100%;
+    background-color: grey;
+    user-select: none;
 }
