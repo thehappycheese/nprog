@@ -11,7 +11,7 @@ import * as viewport_slice from './viewport_slice';
 const persisted_reducer = persistReducer(
     {
         key: 'root',
-        whitelist: ["graph"],
+        whitelist: ["graph", "viewport"],
         storage,
     },
     combineReducers({

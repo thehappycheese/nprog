@@ -22,7 +22,7 @@ body {
     @apply bg-level-0;
 }
 button{
-    @apply bg-brand-accent rounded-sm p-1;
+    @apply bg-brand-accent rounded-lg p-1;
 }
 
 .n-canvas-root{

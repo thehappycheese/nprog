@@ -8,6 +8,8 @@ import { MouseToolModeControls } from "./components/MouseToolModeControls";
 import { hit_test_nodes } from "./util";
 import { default_style } from "./draw/style";
 import { draw_node_body_and_title_bar } from "./draw/node_body_and_title_bar";
+import { draw_grid } from "./draw/grid";
+import { ViewportTransform } from "./store/viewport_slice";
 
 
 type ActiveItem = {
@@ -37,6 +39,7 @@ export function NCanvas() {
     const dispatch = useDispatch();
     const nodes = useSelector((state: RootState) => state.graph.present.nodes);
     const edges = useSelector((state: RootState) => state.graph.present.edges);
+    const viewport = useSelector((state:RootState)=> state.viewport);
 
     // LOCAL STATE OBJECTS
     const [canvas_resize_counter, set_canvas_resize_counter] = useState(Number.MIN_SAFE_INTEGER);
@@ -44,25 +47,18 @@ export function NCanvas() {
     const [mouse_position, set_mouse_position] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down_position, set_mouse_position_mouse_down] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down, set_mouse_down] = useState(false);
-    const [mouse_just_down, set_mouse_just_down] = useState(false);
 
     const [active_item, set_active_item] = useState<ActiveItem>({ type: "none" , target_id:null});
-    const [selected_items, set_selected_items] = useState<
-        Array<{
-            type:"node",
-            id:string,
-        }>
-    >([
-        {
-            type:"node",
-            id:"node-0",
-        }
-    ])
+
+    const [grid_spacing, set_grid_spacing] = useState(50);
 
     // DOM REFS
     const canvas_ref = useRef<HTMLCanvasElement | null>(null);
     const canvas_host_ref = useRef<HTMLDivElement | null>(null);
     const resize_observer_ref = useRef<ResizeObserver | null>(null);
+
+    // DERIVED STATE
+    const transform = canvas_ref.current? new ViewportTransform(viewport, {x:canvas_ref.current.width, y:canvas_ref.current.height}):new ViewportTransform(viewport, {x:1, y:1});
 
     const handleAddNode = () => {
         const newNode: GraphNode = {
@@ -99,12 +95,12 @@ export function NCanvas() {
         console.log(`Pointer event ${e.type}`);
 
         if (e.type === "pointerdown") {
-            set_mouse_just_down(true);
             set_mouse_down(true);
-            set_mouse_position_mouse_down(new_position);
+            set_mouse_position_mouse_down(transform.screen_to_world(new_position));
 
             // Handle drag node?
-            // TODO: abstract somehow? 
+            // TODO: abstract somehow?
+            // TODO: handle transforms?
             let result = hit_test_nodes(nodes, mouse_position);
             if (result){
                 set_active_item({
@@ -113,10 +109,6 @@ export function NCanvas() {
                     target_id:result.id
                 })
             }
-
-            
-        } else {
-            set_mouse_just_down(false);
         }
         if(e.type === "pointerup"){
             set_mouse_down(false);
@@ -151,6 +143,7 @@ export function NCanvas() {
                     canvas.height = entries[0].contentRect.height;
                     // console.log(`Setting Canvas size to ${entries[0].contentRect.width.toFixed(3)}, ${entries[0].contentRect.height.toFixed(3)}`)
                 }
+                
                 set_canvas_resize_counter(i => i + 1)
             });
             resize_observer_ref.current.observe(canvas_host)
@@ -169,11 +162,28 @@ export function NCanvas() {
         const canvas = canvas_ref.current;
         const ctx = canvas.getContext("2d")!;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        let transform = new ViewportTransform(viewport, {x:ctx.canvas.width, y:ctx.canvas.height});
+
+        // DRAW GRID
+        draw_grid(
+            ctx,
+            transform,
+            {
+                grid_spacing,
+                color:"0x999",
+                line_width:1,
+            }
+        )
+
+        // DRAW NODES
         for (const node of nodes) {
             const style = default_style(); 
             let is_active_item = active_item.target_id === node.id;
             let is_active        = is_active_item && active_item.type === "hover_node";
             let is_being_dragged = is_active_item && active_item.type === "drag_node";
+            // todo: must record mouse position in world coordinates at mouse_down to avoid nonsense if
+            // zooming while dragging at the same time
 
 
             if (is_active) {
@@ -185,18 +195,21 @@ export function NCanvas() {
                 node_position = Vector2.add(
                     node.position,
                     Vector2.sub(
-                        mouse_position,
+                        transform.screen_to_world(mouse_position),
                         mouse_down_position
                     )
                 );
             }
+            node_position = transform.world_to_screen(node_position)
             draw_node_body_and_title_bar(
                 ctx,
                 node_position,
-                node.size,
+                Vector2.scale(node.size, viewport.zoom),
                 node.title,
                 style
             )
+            
+            
 
 
 
@@ -213,8 +226,13 @@ export function NCanvas() {
             <div>Mouse Position {Vector2.toString(mouse_position)}</div>
             <div>Mouse Down: {mouse_down.toString()}</div>
             <div>Mouse Down Position {Vector2.toString(mouse_down_position)}</div>
-            <div>Mouse Just Down: {mouse_just_down.toString()}</div>
             <MouseToolModeControls />
+            <button onClick={()=>dispatch(actions.viewport.zoom_in())}>Zoom In</button>
+            <button onClick={()=>dispatch(actions.viewport.zoom_out())}>Zoom Out</button>
+            <button onClick={()=>dispatch(actions.viewport.translate({x:-10,y:0}))}>Pan Left</button>
+            <button onClick={()=>dispatch(actions.viewport.translate({x:10, y:0}))}>Pan Right</button>
+            <button onClick={()=>dispatch(actions.viewport.translate({x:0, y:-10}))}>Pan Up</button>
+            <button onClick={()=>dispatch(actions.viewport.translate({x:0, y:10}))}>Pan Down</button>
         </div>
         <div
             className="n-canvas-canvas-host"

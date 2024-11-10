@@ -1,14 +1,14 @@
 import { NodeRenderStyle } from "./style";
 import * as Vector2 from "../Vector2";
+import { ViewportTransform } from "../store/viewport_slice";
 
 export function draw_node_body_and_title_bar(
     ctx:CanvasRenderingContext2D,
     position:Vector2.Vector2,
     size:Vector2.Vector2,
     title:string,
-    style:NodeRenderStyle
+    style:NodeRenderStyle,
 ) {
-
     // Draw node body
     ctx.fillStyle = style.body.backgroundColor;
     ctx.beginPath();
