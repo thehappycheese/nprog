@@ -38,6 +38,12 @@ export class ViewportTransform {
             this.#zoom
         );
     }
+    scale_world_to_screen(value:number):number{
+        return value * this.#zoom;
+    }
+    scale_screen_to_world(value:number):number{
+        return value / this.#zoom;
+    }
 
     screen_bounds_to_world() {
         return {

@@ -40,7 +40,7 @@ export function draw_grid(
         // Convert world points to screen space
         const screenPointTop    = transform.world_to_screen(worldPointTop);
         const screenPointBottom = transform.world_to_screen(worldPointBottom);
-        ctx.lineDashOffset = worldPointTop.y;
+        ctx.lineDashOffset = transform.scale_world_to_screen(worldPointTop.y);
         // Draw the line
         ctx.beginPath();
         ctx.moveTo(Math.round(screenPointTop.x), screenPointTop.y);
@@ -56,7 +56,7 @@ export function draw_grid(
         // Convert world points to screen space
         const screenPointLeft  = transform.world_to_screen(worldPointLeft);
         const screenPointRight = transform.world_to_screen(worldPointRight);
-        ctx.lineDashOffset = worldPointLeft.x;
+        ctx.lineDashOffset =  transform.scale_world_to_screen(worldPointLeft.x);
         // Draw the line
         ctx.beginPath();
         ctx.moveTo(screenPointLeft.x,  Math.round(screenPointLeft.y));

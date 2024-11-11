@@ -68,7 +68,7 @@ export function NCanvas() {
     const offset_screen = Vector2.sub(mouse_position_screen, mouse_down_position_screen);
     const offset_world  = Vector2.scale(offset_screen, viewport.zoom);
 
-    const offset_viewport_midpoint = mouse_down ? Vector2.add(viewport.midpoint, offset_screen) : viewport.midpoint;
+    const offset_viewport_midpoint = mouse_down && active_item.type==="drag_canvas" ? Vector2.add(viewport.midpoint, offset_screen) : viewport.midpoint;
 
     const transform = new ViewportTransform(
         viewport.zoom,
@@ -87,7 +87,7 @@ export function NCanvas() {
 
         set_mouse_position_screen(new_position);
         set_mouse_position_world(transform.screen_to_world(new_position));
-        console.log(`Pointer event ${e.type}`);
+        
 
         if (e.type === "pointerdown") {
             set_mouse_down(true);
@@ -110,8 +110,7 @@ export function NCanvas() {
                     target_id:null
                 })
             }
-        }
-        if(e.type === "pointerup"){
+        }else if(e.type === "pointerup"){
             set_mouse_down(false);
             if(active_item.type==="drag_node"){
                 dispatch(actions.graph.offset_node({
@@ -134,6 +133,12 @@ export function NCanvas() {
                     target_id:null,
                 })
             }
+        }else if(e.type === "pointerover"){
+            // TODO: pointer over
+        }else if(e.type === "pointerout"){
+            // TODO: pointer out
+        }else{
+            console.log(`Pointer event ${e.type} WHAT?`);
         }
     };
 
@@ -149,7 +154,6 @@ export function NCanvas() {
         set_mouse_position_world(transform.screen_to_world(new_mouse_position));
     }
     const handle_wheel_event = (e:React.WheelEvent<HTMLCanvasElement>)=>{
-        console.log(e)
         if(e.deltaY<0){
             dispatch(actions.viewport.zoom_in_to(mouse_position_world));
         }else if(e.deltaY>0){
@@ -277,6 +281,7 @@ export function NCanvas() {
                 onPointerDown={handle_canvas_pointer_event}
                 onPointerUp={handle_canvas_pointer_event}
                 onPointerOut={handle_canvas_pointer_event}
+                onPointerOver={handle_canvas_pointer_event}
                 onWheel={handle_wheel_event}
             />
             {/* {
