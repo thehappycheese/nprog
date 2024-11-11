@@ -27,9 +27,11 @@ export function draw_grid(
     const endY = Math.ceil(bottom_right.y / style.grid_spacing) * style.grid_spacing;
 
     ctx.save()
+    ctx.translate(0.5,0.5);
     ctx.strokeStyle = style.color;
     ctx.lineWidth   = style.line_width;
     ctx.setLineDash([2,3])
+    
     // Draw vertical grid lines
     for (let x = startX; x <= endX; x += style.grid_spacing) {
         const worldPointTop = { x, y: top_left.y };
@@ -38,11 +40,11 @@ export function draw_grid(
         // Convert world points to screen space
         const screenPointTop    = transform.world_to_screen(worldPointTop);
         const screenPointBottom = transform.world_to_screen(worldPointBottom);
-        
+        ctx.lineDashOffset = worldPointTop.y;
         // Draw the line
         ctx.beginPath();
-        ctx.moveTo(screenPointTop.x, screenPointTop.y);
-        ctx.lineTo(screenPointBottom.x, screenPointBottom.y);
+        ctx.moveTo(Math.round(screenPointTop.x), screenPointTop.y);
+        ctx.lineTo(Math.round(screenPointBottom.x), screenPointBottom.y);
         ctx.stroke();
     }
 
@@ -54,11 +56,11 @@ export function draw_grid(
         // Convert world points to screen space
         const screenPointLeft  = transform.world_to_screen(worldPointLeft);
         const screenPointRight = transform.world_to_screen(worldPointRight);
-        
+        ctx.lineDashOffset = worldPointLeft.x;
         // Draw the line
         ctx.beginPath();
-        ctx.moveTo(screenPointLeft.x, screenPointLeft.y);
-        ctx.lineTo(screenPointRight.x, screenPointRight.y);
+        ctx.moveTo(screenPointLeft.x,  Math.round(screenPointLeft.y));
+        ctx.lineTo(screenPointRight.x, Math.round(screenPointRight.y));
         ctx.stroke();
     }
     ctx.restore()

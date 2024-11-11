@@ -10,7 +10,7 @@ export const default_style = () => ({
         highlight:"#555",
     },
     border:{
-        color:"#222",
+        color:"rgb(117, 102, 98)",
         thickness:2,
     },
     radius:5,

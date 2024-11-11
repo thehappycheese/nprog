@@ -5,7 +5,7 @@ export interface Vector2 {
 }
 
 export function toString(v: Vector2): string {
-    return `{${v.x.toFixed(2)}, ${v.y.toFixed(2)}}`;
+    return `{${v.x.toFixed(1)}, ${v.y.toFixed(1)}}`;
 }
 export function add(a: Vector2, b: Vector2): Vector2 {
     return { x: a.x + b.x, y: a.y + b.y };
