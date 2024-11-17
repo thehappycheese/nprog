@@ -105,8 +105,8 @@ export const NCanvas: React.FC = () => {
         set_mouse_position_screen(new_position);
         set_mouse_position_world(transform.screen_to_world(new_position));
 
-
         if (e.type === "pointerdown") {
+            // MARK: >> pointerdown
             set_mouse_down(true);
             set_mouse_down_position_screen(new_position);
             set_mouse_down_position_world(transform.screen_to_world(new_position));
@@ -114,7 +114,7 @@ export const NCanvas: React.FC = () => {
             // Handle drag node?
             // TODO: abstract somehow?
             // TODO: handle transforms?
-            let result = hit_test_nodes(nodes, mouse_position_screen);
+            let result = hit_test_nodes(nodes, mouse_down_position_world);
             if (result) {
                 set_active_item({
                     type: "drag_node",
@@ -128,6 +128,7 @@ export const NCanvas: React.FC = () => {
                 })
             }
         } else if (e.type === "pointerup" || e.type === "pointerout") {
+            // MARK: >> pointer up/out
             set_mouse_down(false);
             if (active_item.type === "drag_node") {
                 dispatch(actions.graph.offset_node({
@@ -157,7 +158,7 @@ export const NCanvas: React.FC = () => {
         }
     };
 
-    // MARK: POINTER MOVE
+    // MARK: POINTERMOVE
     const handle_canvas_pointer_move_event = (e: React.PointerEvent<HTMLCanvasElement>) => {
         e.preventDefault();
 

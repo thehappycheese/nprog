@@ -26,6 +26,10 @@ export function left(a: Vector2): Vector2 {
     return { x: -a.y, y: a.x };
 }
 
+export function sum(items:Vector2[]){
+    return items.reduce((cur, acc)=>({x:cur.x+acc.x, y:cur.y+cur.y}));
+}
+
 export const inside_rect = (test_position:Vector2) => (rect_position:Vector2, rect_size:Vector2) => {
     let relative_test_position = sub(test_position, rect_position);
     return (
