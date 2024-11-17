@@ -225,6 +225,7 @@ export const NCanvas: React.FC = () => {
                 grid_spacing,
                 color: "rgb(32, 28, 32)",
                 line_width: 1,
+                minimum_spacing_px:20
             }
         )
 
