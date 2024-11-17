@@ -5,7 +5,7 @@ import { RootState, actions } from "./store";
 import { ActionCreators } from "redux-undo";
 import * as Vector2 from "./Vector2";
 import { MouseToolMode, MouseToolModeControls } from "./components/MouseToolModeControls";
-import { hit_test_nodes } from "./util";
+import { hit_test_nodes } from "./hit_test_nodes";
 import { default_style } from "./draw/style";
 import { draw_node_body_and_title_bar } from "./draw/node_body_and_title_bar";
 import { draw_grid } from "./draw/grid";
@@ -13,7 +13,7 @@ import { ViewportTransform } from "./ViewportTransform";
 import SettingsMenu from "./components/SettingsMenu";
 import { useConstrainedNumber } from "./hooks/useConstrainedNumber";
 
-
+// MARK: type ActiveItem
 type ActiveItem = {
     type: "none",
     target_id: null,
@@ -72,12 +72,20 @@ export const NCanvas: React.FC = () => {
 
     // MARK: DERIVED STATE
 
-    const screen_size = canvas_ref.current ? { x: canvas_ref.current.width, y: canvas_ref.current.height } : { x: 1, y: 1 };
+    const screen_size = (
+        canvas_ref.current
+        ? { x: canvas_ref.current.width, y: canvas_ref.current.height }
+        : { x: 1, y: 1 }
+    );
 
     const offset_screen = Vector2.sub(mouse_position_screen, mouse_down_position_screen);
     //const offset_world = Vector2.scale(offset_screen, viewport.zoom);
 
-    const offset_viewport_midpoint = mouse_down && active_item.type === "drag_canvas" ? Vector2.add(viewport.midpoint, offset_screen) : viewport.midpoint;
+    const offset_viewport_midpoint = (
+        mouse_down && active_item.type === "drag_canvas"
+        ? Vector2.add(viewport.midpoint, offset_screen)
+        : viewport.midpoint
+    );
 
     const transform = new ViewportTransform(
         viewport.zoom,
@@ -208,9 +216,7 @@ export const NCanvas: React.FC = () => {
         const ctx = canvas.getContext("2d")!;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        //let transform = new ViewportTransform(viewport.zoom, viewport.midpoint, {x:ctx.canvas.width, y:ctx.canvas.height});
-
-        // DRAW GRID
+        // MARK: >> draw grid
         draw_grid(
             ctx,
             transform,
@@ -221,7 +227,7 @@ export const NCanvas: React.FC = () => {
             }
         )
 
-        // DRAW NODES
+        // MARK: >> draw nodes
         for (const node of nodes) {
             const style = default_style();
             let is_active_item = active_item.target_id === node.id;
@@ -255,6 +261,13 @@ export const NCanvas: React.FC = () => {
             )
 
         }
+        // MARK: >> draw edges
+
+
+
+
+
+
     }
 
     // MARK: DOM RENDER
