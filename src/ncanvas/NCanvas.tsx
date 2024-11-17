@@ -69,6 +69,8 @@ export const NCanvas: React.FC = () => {
 
     const [grid_spacing, set_grid_spacing] = useConstrainedNumber(50, [5, 1000]);
 
+    const [node_hit_test_result, set_node_hit_test_result] = useState("");
+
 
     // MARK: DERIVED STATE
 
@@ -101,24 +103,26 @@ export const NCanvas: React.FC = () => {
         let x = e.clientX - canvasRect.left;
         let y = e.clientY - canvasRect.top;
         let new_position = { x, y };
+        let new_position_world = transform.screen_to_world(new_position)
 
         set_mouse_position_screen(new_position);
-        set_mouse_position_world(transform.screen_to_world(new_position));
+        set_mouse_position_world(new_position_world);
 
         if (e.type === "pointerdown") {
             // MARK: >> pointerdown
             set_mouse_down(true);
             set_mouse_down_position_screen(new_position);
-            set_mouse_down_position_world(transform.screen_to_world(new_position));
+            set_mouse_down_position_world(new_position_world);
 
             // Handle drag node?
             // TODO: abstract somehow?
             // TODO: handle transforms?
-            let result = hit_test_nodes(nodes, mouse_down_position_world);
+            let result = hit_test_nodes(nodes, new_position_world);
+            console.log("Pointer Down Hit Test", result)
             if (result) {
                 set_active_item({
                     type: "drag_node",
-                    mouse_down_coord: mouse_down_position_world,
+                    mouse_down_coord: new_position_world,
                     target_id: result.id
                 })
             } else {
@@ -133,7 +137,7 @@ export const NCanvas: React.FC = () => {
             if (active_item.type === "drag_node") {
                 dispatch(actions.graph.offset_node({
                     id: active_item.target_id,
-                    offset: Vector2.sub(mouse_position_screen, mouse_down_position_world)
+                    offset: Vector2.sub(new_position_world, active_item.mouse_down_coord )
                 }))
                 set_active_item({
                     type: "hover_node",
@@ -166,9 +170,31 @@ export const NCanvas: React.FC = () => {
         let x = e.clientX - canvasRect.left;
         let y = e.clientY - canvasRect.top;
         let new_mouse_position = { x, y };
+        let new_mouse_position_world = transform.screen_to_world(new_mouse_position);
 
+        
         set_mouse_position_screen(new_mouse_position);
-        set_mouse_position_world(transform.screen_to_world(new_mouse_position));
+        set_mouse_position_world(new_mouse_position_world);
+
+        let result = hit_test_nodes(nodes, new_mouse_position_world);
+        set_node_hit_test_result(result?.id ?? "");
+        if (result){
+            // MARK: BORKED
+            if(active_item.type==="none"){ // TODO: this is a borked way to check for state transition
+                set_active_item({
+                    type:"hover_node",
+                    target_id:result.id
+                })
+            }
+        }else{
+            if (active_item.type=="hover_node"){
+                set_active_item({
+                    type:"none",
+                    target_id:null
+                })
+            }
+        }
+
     }
     const handle_wheel_event = (e: React.WheelEvent<HTMLCanvasElement>) => {
         if (e.deltaY < 0) {
@@ -262,6 +288,13 @@ export const NCanvas: React.FC = () => {
                 style
             )
 
+            let body_pos = Vector2.add(node_position, {x:3,y:8+style.title.height})
+            ctx.fillText(
+                node.id,
+                body_pos.x,
+                body_pos.y
+            )
+
         }
         // MARK: >> draw edges
 
@@ -322,6 +355,8 @@ export const NCanvas: React.FC = () => {
                 <div>Mouse World       </div><div>{Vector2.toString(mouse_position_world)}</div>
                 <div>Mouse Down World  </div><div>{Vector2.toString(mouse_down_position_world)}</div>
                 <div>Mouse Down        </div><div>{mouse_down.toString()}</div>
+                <div>Hit Test Node     </div><div>{node_hit_test_result}</div>
+                <div>Active Item       </div><pre className="text-[0.8em]">{JSON.stringify(active_item,null,1)}</pre>
             </div>
             <div>{nodes.map(item => `<Node:${item.id} ${item.title} ...>`).join("\n")}</div>
         </div>
