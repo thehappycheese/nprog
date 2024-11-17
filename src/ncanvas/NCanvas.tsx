@@ -6,7 +6,7 @@ import { ActionCreators } from "redux-undo";
 import * as Vector2 from "./Vector2";
 import { MouseToolMode, MouseToolModeControls } from "./components/MouseToolModeControls";
 import { hit_test_nodes } from "./hit_test_nodes";
-import { default_style } from "./draw/style";
+import { default_node_style } from "./draw/NodeRenderStyle";
 import { draw_node_body_and_title_bar } from "./draw/node_body_and_title_bar";
 import { draw_grid } from "./draw/grid";
 import { ViewportTransform } from "./ViewportTransform";
@@ -73,6 +73,7 @@ export const NCanvas: React.FC = () => {
 
 
     // MARK: DERIVED STATE
+    const node_style = default_node_style(); // TODO: maybe should be actual state?
 
     const screen_size = (
         canvas_ref.current
@@ -257,7 +258,7 @@ export const NCanvas: React.FC = () => {
 
         // MARK: >> draw nodes
         for (const node of nodes) {
-            const style = default_style();
+            
             let is_active_item = active_item.target_id === node.id;
             let is_active = is_active_item && active_item.type === "hover_node";
             let is_being_dragged = is_active_item && active_item.type === "drag_node";
@@ -266,8 +267,8 @@ export const NCanvas: React.FC = () => {
 
 
             if (is_active) {
-                style.body.backgroundColor = style.body.highlight;
-                style.border.color = style.body.highlight;
+                node_style.body.backgroundColor = node_style.body.highlight;
+                node_style.border.color = node_style.body.highlight;
             }
             let node_position = node.position;
             if (is_being_dragged) {
@@ -284,17 +285,9 @@ export const NCanvas: React.FC = () => {
                 ctx,
                 node_position,
                 Vector2.scale(node.size, viewport.zoom),
-                node.title,
-                style
+                node.title + " [" +node.id+"]",
+                node_style
             )
-
-            let body_pos = Vector2.add(node_position, {x:3,y:8+style.title.height})
-            ctx.fillText(
-                node.id,
-                body_pos.x,
-                body_pos.y
-            )
-
         }
         // MARK: >> draw edges
 
@@ -363,7 +356,7 @@ export const NCanvas: React.FC = () => {
         <div
             className="n-canvas-canvas-host"
             ref={canvas_resize_callback}
-            style={{ fontSize: `${viewport.zoom}em` }}
+            
         >
             <canvas
                 className="n-canvas-canvas rounded-md bg-level-1 w-full h-full select-none"
@@ -375,36 +368,47 @@ export const NCanvas: React.FC = () => {
                 onPointerOver={handle_canvas_pointer_event}
                 onWheel={handle_wheel_event}
             />
-            {/* {
-                nodes.map(node=>{
-                    let style = default_style();
-                    let is_active_item   = active_item.target_id === node.id;
-                    let is_active        = is_active_item && active_item.type === "hover_node";
-                    let is_being_dragged = is_active_item && active_item.type === "drag_node";
-                    let node_position = node.position;
-                    if(is_being_dragged){
-                        node_position = Vector2.add(
-                            node.position,
-                            Vector2.sub(
-                                mouse_position_screen,
-                                mouse_down_position_world
-                            )
-                        );
-                    }
-                    return <div
-                        style={{
-                            position: "absolute",
-                            left: node_position.x + "px",
-                            top : node_position.y+style.title.height + "px",
-                            //backgroundColor:"#FF00FF99",
-                            width:node.size.x+"px",
-                            height:node.size.y-style.title.height+"px",
-                            padding:"5px",
-                        }}
-                        key={node.id}
-                    >node.title</div>
-                })
-            } */}
+            {
+                (()=>{
+
+                    let transform = new ViewportTransform(viewport.zoom, viewport.midpoint, screen_size);
+                    return nodes.map(node=>{
+                        const style = default_node_style();
+                        const is_active_item   = active_item.target_id === node.id;
+                        const is_active        = is_active_item && active_item.type === "hover_node";
+                        const is_being_dragged = is_active_item && active_item.type === "drag_node";
+                        let node_position_world = node.position;
+                        if(is_being_dragged){
+                            node_position_world = Vector2.add(
+                                node.position,
+                                Vector2.sub(
+                                    transform.screen_to_world(mouse_position_screen),
+                                    mouse_down_position_world
+                                )
+                            );
+                         }
+
+                        const node_position_screen = transform.world_to_screen(node_position_world);
+                        return <div
+                            style={{
+                                position: "absolute",
+                                // left: node_position_world.x + "px",
+                                // top : node_position_world.y+style.title.height + "px",
+                                left:0,
+                                top:0,
+                                //backgroundColor:"#FF00FF99",
+                                // width:node.size.x+"px",
+                                // height:node.size.y-style.title.height+"px",
+                                paddingTop:node_style.title.height+node_style.padding,
+                                paddingLeft: node_style.padding,
+                                pointerEvents:"none",
+                                transform:`translate(${node_position_screen.x}px, ${node_position_screen.y}px)`,//scale(${viewport.zoom})
+                            }}
+                            key={node.id}
+                        >{node.title}</div>
+                    })
+                })()
+            }
         </div>
     </div>
 }

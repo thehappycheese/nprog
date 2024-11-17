@@ -1,4 +1,4 @@
-import { NodeRenderStyle } from "./style";
+import { NodeRenderStyle } from "./NodeRenderStyle";
 import * as Vector2 from "../Vector2";
 
 export function draw_node_body_and_title_bar(

@@ -19,7 +19,7 @@ export interface GraphNode {
     title: string;
     position: Vector2;
     size: Vector2;
-    components: Array<NodeComponent>;
+    components: Array<string>;
 }
 
 // Edge interface representing the connections between nodes

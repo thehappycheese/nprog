@@ -1,10 +1,11 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { GraphNode, GraphEdge } from '../graph_types';
+import { GraphNode, GraphEdge, NodeComponent } from '../graph_types';
 import * as Vector2 from '../Vector2';
 
 export interface GraphState {
     nodes: Array<GraphNode>;
     edges: Array<GraphEdge>;
+    components:Array<NodeComponent>;
     selected:Array<SelectionItem>
 }
 
@@ -12,6 +13,7 @@ export interface SelectionItem {
     type:"node"|"edge",
     id:string,
 }
+
 const initialState: GraphState = {
     nodes: [
         {
@@ -31,6 +33,7 @@ const initialState: GraphState = {
         },
 
     ],
+    components: [],
     edges: [],
     selected:[]
 };
