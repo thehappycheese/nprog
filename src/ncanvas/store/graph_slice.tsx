@@ -60,6 +60,11 @@ const graph_slice = createSlice({
         },
         deselect: (state, action:PayloadAction<SelectionItem>)=>{
             state.selected = state.selected.filter(item=>!(item.type===action.payload.type && item.id===action.payload.id));
+        },
+        clear_all: (state) =>{
+            state.nodes = []
+            state.edges = []
+            state.selected = []
         }
     },
 });
