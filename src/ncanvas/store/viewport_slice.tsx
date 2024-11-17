@@ -22,7 +22,7 @@ const graph_slice = createSlice({
         zoom_out: state => {
             state.zoom /= 1.5;
         },
-        reset: state=>{
+        reset: () => {
             return {
                 zoom:1,
                 midpoint:{x:0,y:0}

@@ -14,7 +14,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ children }) => {
         >Settings</button>
         <dialog
             // className="fixed inset-0 z-50 w-full h-full bg-level-0 bg-opacity-90 flex justify-center items-center"
-            className="fixed inset-0 z-50 w-full h-full bg-gray-800 bg-opacity-90 flex justify-center items-center"
+            className="fixed inset-0 z-50 w-full h-full bg-level-0 bg-opacity-90 flex justify-center items-center"
             open={is_open}
             // {...(is_open ? { open: true } : {})}
         >

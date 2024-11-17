@@ -11,6 +11,7 @@ import { draw_node_body_and_title_bar } from "./draw/node_body_and_title_bar";
 import { draw_grid } from "./draw/grid";
 import { ViewportTransform } from "./ViewportTransform";
 import SettingsMenu from "./components/SettingsMenu";
+import { useConstrainedNumber } from "./hooks/useConstrainedNumber";
 
 
 type ActiveItem = {
@@ -36,20 +37,24 @@ type ActiveItem = {
 };
 
 
-export const NCanvas:React.FC = () => {
+export const NCanvas: React.FC = () => {
+    // MARK: DOM REFS
+    const canvas_ref = useRef<HTMLCanvasElement | null>(null);
+    const canvas_host_ref = useRef<HTMLDivElement | null>(null);
+    const resize_observer_ref = useRef<ResizeObserver | null>(null);
 
-    // REDUX MAIN STORE OBJECTS
+    // MARK: REDUX STATE
     const dispatch = useDispatch();
-    const undo_history = useSelector((state:RootState)=> ({
-        past_states:state.graph.past.length,
-        future_states:state.graph.future.length,
-        limit:state.graph.limit
+    const undo_history = useSelector((state: RootState) => ({
+        past_states: state.graph.past.length,
+        future_states: state.graph.future.length,
+        limit: state.graph.limit
     }));
     const nodes = useSelector((state: RootState) => state.graph.present.nodes);
     const edges = useSelector((state: RootState) => state.graph.present.edges);
-    const viewport = useSelector((state:RootState)=> state.viewport);
+    const viewport = useSelector((state: RootState) => state.viewport);
 
-    // LOCAL STATE OBJECTS
+    // MARK: LOCAL STATE
     const [dirty_counter, set_dirty_counter] = useState(Number.MIN_SAFE_INTEGER);
 
     const [mouse_position_screen, set_mouse_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
@@ -58,25 +63,21 @@ export const NCanvas:React.FC = () => {
     const [mouse_down_position_screen, set_mouse_down_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down, set_mouse_down] = useState(false);
 
-    const [mouse_tool_mode, set_mouse_tool_mode] = useState<MouseToolMode>({type:"select"});
+    const [mouse_tool_mode, set_mouse_tool_mode] = useState<MouseToolMode>({ type: "select" });
 
-    const [active_item, set_active_item] = useState<ActiveItem>({ type: "none" , target_id:null});
+    const [active_item, set_active_item] = useState<ActiveItem>({ type: "none", target_id: null });
 
-    const [grid_spacing, set_grid_spacing] = useState(50);
+    const [grid_spacing, set_grid_spacing] = useConstrainedNumber(50, [5, 1000]);
 
-    // DOM REFS
-    const canvas_ref          = useRef< HTMLCanvasElement | null >(null);
-    const canvas_host_ref     = useRef< HTMLDivElement    | null >(null);
-    const resize_observer_ref = useRef< ResizeObserver    | null >(null);
 
-    // DERIVED STATE
+    // MARK: DERIVED STATE
 
-    const screen_size = canvas_ref.current ? {x:canvas_ref.current.width, y:canvas_ref.current.height}: {x:1, y:1};
+    const screen_size = canvas_ref.current ? { x: canvas_ref.current.width, y: canvas_ref.current.height } : { x: 1, y: 1 };
 
     const offset_screen = Vector2.sub(mouse_position_screen, mouse_down_position_screen);
-    const offset_world  = Vector2.scale(offset_screen, viewport.zoom);
+    //const offset_world = Vector2.scale(offset_screen, viewport.zoom);
 
-    const offset_viewport_midpoint = mouse_down && active_item.type==="drag_canvas" ? Vector2.add(viewport.midpoint, offset_screen) : viewport.midpoint;
+    const offset_viewport_midpoint = mouse_down && active_item.type === "drag_canvas" ? Vector2.add(viewport.midpoint, offset_screen) : viewport.midpoint;
 
     const transform = new ViewportTransform(
         viewport.zoom,
@@ -84,18 +85,18 @@ export const NCanvas:React.FC = () => {
         screen_size
     );
 
-
+    // MARK: POINTER EVENT
     const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLCanvasElement>) => {
         e.preventDefault();
 
         const canvasRect = (e.target as HTMLCanvasElement).getBoundingClientRect();
         let x = e.clientX - canvasRect.left;
         let y = e.clientY - canvasRect.top;
-        let new_position = {x, y};
+        let new_position = { x, y };
 
         set_mouse_position_screen(new_position);
         set_mouse_position_world(transform.screen_to_world(new_position));
-        
+
 
         if (e.type === "pointerdown") {
             set_mouse_down(true);
@@ -106,68 +107,69 @@ export const NCanvas:React.FC = () => {
             // TODO: abstract somehow?
             // TODO: handle transforms?
             let result = hit_test_nodes(nodes, mouse_position_screen);
-            if (result){
+            if (result) {
                 set_active_item({
-                    type:"drag_node",
-                    mouse_down_coord:mouse_down_position_world,
-                    target_id:result.id
+                    type: "drag_node",
+                    mouse_down_coord: mouse_down_position_world,
+                    target_id: result.id
                 })
-            }else{
+            } else {
                 set_active_item({
-                    type:"drag_canvas",
-                    target_id:null
+                    type: "drag_canvas",
+                    target_id: null
                 })
             }
-        }else if(e.type === "pointerup" || e.type === "pointerout"){
+        } else if (e.type === "pointerup" || e.type === "pointerout") {
             set_mouse_down(false);
-            if(active_item.type==="drag_node"){
+            if (active_item.type === "drag_node") {
                 dispatch(actions.graph.offset_node({
-                    id:active_item.target_id,
-                    offset:Vector2.sub(mouse_position_screen, mouse_down_position_world)
+                    id: active_item.target_id,
+                    offset: Vector2.sub(mouse_position_screen, mouse_down_position_world)
                 }))
-                set_active_item( {
-                    type:"hover_node",
-                    target_id:active_item.target_id,
+                set_active_item({
+                    type: "hover_node",
+                    target_id: active_item.target_id,
                 })
-            }else if(active_item.type==="drag_canvas"){
+            } else if (active_item.type === "drag_canvas") {
                 dispatch(actions.viewport.translate(offset_screen))
                 set_active_item({
-                    type:"none",
-                    target_id:null,
+                    type: "none",
+                    target_id: null,
                 })
-            }else{
+            } else {
                 set_active_item({
-                    type:"none",
-                    target_id:null,
+                    type: "none",
+                    target_id: null,
                 })
             }
-        }else if(e.type === "pointerover"){
+        } else if (e.type === "pointerover") {
             // TODO: pointer over
-        }else{
+        } else {
             console.log(`Pointer event ${e.type} WHAT?`);
         }
     };
 
-    const handle_canvas_pointer_move_event = (e:React.PointerEvent<HTMLCanvasElement>) => {
+    // MARK: POINTER MOVE
+    const handle_canvas_pointer_move_event = (e: React.PointerEvent<HTMLCanvasElement>) => {
         e.preventDefault();
 
         const canvasRect = (e.target as HTMLCanvasElement).getBoundingClientRect();
         let x = e.clientX - canvasRect.left;
         let y = e.clientY - canvasRect.top;
-        let new_mouse_position = {x, y};
+        let new_mouse_position = { x, y };
 
         set_mouse_position_screen(new_mouse_position);
         set_mouse_position_world(transform.screen_to_world(new_mouse_position));
     }
-    const handle_wheel_event = (e:React.WheelEvent<HTMLCanvasElement>)=>{
-        if(e.deltaY<0){
+    const handle_wheel_event = (e: React.WheelEvent<HTMLCanvasElement>) => {
+        if (e.deltaY < 0) {
             dispatch(actions.viewport.zoom_in_to({
-                target_screen_position:mouse_position_screen,
+                target_screen_position: mouse_position_screen,
                 screen_size
             }));
-        }else if(e.deltaY>0){
+        } else if (e.deltaY > 0) {
             dispatch(actions.viewport.zoom_out_from({
-                target_screen_position:mouse_position_screen,
+                target_screen_position: mouse_position_screen,
                 screen_size
             }));
         }
@@ -176,16 +178,16 @@ export const NCanvas:React.FC = () => {
     const canvas_resize_callback = useCallback((canvas_host: HTMLDivElement | null) => {
         // const canvas = canvas_ref.current;
         // if(!canvas) return;
-        if(canvas_host){
+        if (canvas_host) {
             resize_observer_ref.current = new ResizeObserver(entries => {
                 const canvas = canvas_ref.current;
-                if(!canvas) return; 
-                if(entries?.[0]){
-                    canvas.width  = entries[0].contentRect.width;
+                if (!canvas) return;
+                if (entries?.[0]) {
+                    canvas.width = entries[0].contentRect.width;
                     canvas.height = entries[0].contentRect.height;
                     // console.log(`Setting Canvas size to ${entries[0].contentRect.width.toFixed(3)}, ${entries[0].contentRect.height.toFixed(3)}`)
                 }
-                
+
                 set_dirty_counter(i => i + 1)
             });
             resize_observer_ref.current.observe(canvas_host)
@@ -200,7 +202,7 @@ export const NCanvas:React.FC = () => {
         }
     }, [set_dirty_counter]);
 
-    // CANVAS RENDER
+    // MARK: CANVAS RENDER
     if (canvas_ref.current) {
         const canvas = canvas_ref.current;
         const ctx = canvas.getContext("2d")!;
@@ -214,16 +216,16 @@ export const NCanvas:React.FC = () => {
             transform,
             {
                 grid_spacing,
-                color:"rgb(32, 28, 32)",
-                line_width:1,
+                color: "rgb(32, 28, 32)",
+                line_width: 1,
             }
         )
 
         // DRAW NODES
         for (const node of nodes) {
-            const style = default_style(); 
+            const style = default_style();
             let is_active_item = active_item.target_id === node.id;
-            let is_active        = is_active_item && active_item.type === "hover_node";
+            let is_active = is_active_item && active_item.type === "hover_node";
             let is_being_dragged = is_active_item && active_item.type === "drag_node";
             // todo: must record mouse position in world coordinates at mouse_down to avoid nonsense if
             // zooming while dragging at the same time
@@ -234,7 +236,7 @@ export const NCanvas:React.FC = () => {
                 style.border.color = style.body.highlight;
             }
             let node_position = node.position;
-            if(is_being_dragged){
+            if (is_being_dragged) {
                 node_position = Vector2.add(
                     node.position,
                     Vector2.sub(
@@ -255,33 +257,38 @@ export const NCanvas:React.FC = () => {
         }
     }
 
+    // MARK: DOM RENDER
     return <div className="n-canvas-root">
         <div className="n-canvas-controls">
-            <SettingsMenu isOpen={false} onClose={()=>{}}>
+            <div style={{display:"none"}}>{dirty_counter}</div>
+            <SettingsMenu isOpen={false} onClose={() => { }}>
                 <div className="grid grid-cols-1 gap-2 p-5">
-                <button onClick={()=>dispatch(ActionCreators.clearHistory())}>Clear Undo History</button>
-                <div className="grid grid-cols-2 gap-x-2 ml-3">
-                    <div>Past States: </div><div>{undo_history.past_states}</div>
-                    <div>Future States: </div><div>{undo_history.future_states}</div>
-                    <div>Limit: </div><div>{undo_history.limit}</div>
-                </div>
-                <button onClick={()=>{
-                    localStorage.clear();
-                    set_dirty_counter(i=>i+1);
-                }}>Clear Local Storage</button>
-                <div className="grid grid-cols-2 gap-x-2 ml-3">
-                    <div>Size: </div><div>{JSON.stringify(localStorage).length}</div>
-                </div>
-                <button onClick={()=>dispatch(actions.graph.clear_all())}>Delete All</button>
-                <div className="grid grid-cols-2 gap-x-2 ml-3">
-                    <div>Nodes: </div><div>{nodes.length}</div>
-                    <div>Edges: </div><div>{edges.length}</div>
-                </div>
+                    <button onClick={() => dispatch(ActionCreators.clearHistory())}>Clear Undo History</button>
+                    <div className="grid grid-cols-2 gap-x-2 ml-3">
+                        <div>Past States: </div><div>{undo_history.past_states}</div>
+                        <div>Future States: </div><div>{undo_history.future_states}</div>
+                        <div>Limit: </div><div>{undo_history.limit}</div>
+                    </div>
+                    <button onClick={() => {
+                        localStorage.clear();
+                        set_dirty_counter(i => i + 1);
+                    }}>Clear Local Storage</button>
+                    <div className="grid grid-cols-2 gap-x-2 ml-3">
+                        <div>Size: </div><div>{JSON.stringify(localStorage).length}</div>
+                    </div>
+                    <button onClick={() => dispatch(actions.graph.clear_all())}>Delete All</button>
+                    <div className="grid grid-cols-2 gap-x-2 ml-3">
+                        <div>Nodes: </div><div>{nodes.length}</div>
+                        <div>Edges: </div><div>{edges.length}</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-2 ml-3">
+                        <label>Grid Spacing</label><input type="number" value={grid_spacing} onChange={e => set_grid_spacing(parseFloat(e.target.value))} className="bg-level-0" />
+                    </div>
                 </div>
             </SettingsMenu>
-            <button onClick={()=>dispatch(ActionCreators.undo())}>Undo</button>
-            <button onClick={()=>dispatch(ActionCreators.redo())}>Redo</button>
-            <button onClick={() => {
+            <button className="btn btn-accent" onClick={() => dispatch(ActionCreators.undo())}>Undo</button>
+            <button className="btn" onClick={() => dispatch(ActionCreators.redo())}>Redo</button>
+            <button className="btn" onClick={() => {
                 const newNode: GraphNode = {
                     id: `node-${nodes.length + 1}`,
                     title: 'New Node',
@@ -291,22 +298,22 @@ export const NCanvas:React.FC = () => {
                 }; // Example structure
                 dispatch(actions.graph.add_node(newNode));
             }}>Add Node</button>
-            
-            <button onClick={()=>dispatch(actions.viewport.reset())}>Reset View</button>
-            <MouseToolModeControls mouse_tool_mode={mouse_tool_mode} set_mouse_tool_mode={set_mouse_tool_mode}/>
+
+            <button onClick={() => dispatch(actions.viewport.reset())}>Reset View</button>
+            <MouseToolModeControls mouse_tool_mode={mouse_tool_mode} set_mouse_tool_mode={set_mouse_tool_mode} />
             <div className="grid grid-cols-2 gap-2 text-[0.8em] font-mono">
-                <div>Mouse Screen      </div><div>{Vector2.toString(mouse_position_screen      )}</div>
-                <div>Mouse Down Screen </div><div>{Vector2.toString(mouse_down_position_screen )}</div>
-                <div>Mouse World       </div><div>{Vector2.toString(mouse_position_world       )}</div>
-                <div>Mouse Down World  </div><div>{Vector2.toString(mouse_down_position_world  )}</div>
-                <div>Mouse Down        </div><div>{mouse_down.toString()                        }</div>
+                <div>Mouse Screen      </div><div>{Vector2.toString(mouse_position_screen)}</div>
+                <div>Mouse Down Screen </div><div>{Vector2.toString(mouse_down_position_screen)}</div>
+                <div>Mouse World       </div><div>{Vector2.toString(mouse_position_world)}</div>
+                <div>Mouse Down World  </div><div>{Vector2.toString(mouse_down_position_world)}</div>
+                <div>Mouse Down        </div><div>{mouse_down.toString()}</div>
             </div>
             <div>{nodes.map(item => `<Node:${item.id} ${item.title} ...>`).join("\n")}</div>
         </div>
         <div
             className="n-canvas-canvas-host"
             ref={canvas_resize_callback}
-            style={{fontSize:`${viewport.zoom}em`}}
+            style={{ fontSize: `${viewport.zoom}em` }}
         >
             <canvas
                 className="n-canvas-canvas rounded-md bg-level-1 w-full h-full select-none"
