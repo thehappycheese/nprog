@@ -10,6 +10,7 @@ import { default_style } from "./draw/style";
 import { draw_node_body_and_title_bar } from "./draw/node_body_and_title_bar";
 import { draw_grid } from "./draw/grid";
 import { ViewportTransform } from "./ViewportTransform";
+import SettingsMenu from "./components/SettingsMenu";
 
 
 type ActiveItem = {
@@ -35,16 +36,21 @@ type ActiveItem = {
 };
 
 
-export function NCanvas() {
+export const NCanvas:React.FC = () => {
 
     // REDUX MAIN STORE OBJECTS
     const dispatch = useDispatch();
+    const undo_history = useSelector((state:RootState)=> ({
+        past_states:state.graph.past.length,
+        future_states:state.graph.future.length,
+        limit:state.graph.limit
+    }));
     const nodes = useSelector((state: RootState) => state.graph.present.nodes);
     const edges = useSelector((state: RootState) => state.graph.present.edges);
     const viewport = useSelector((state:RootState)=> state.viewport);
 
     // LOCAL STATE OBJECTS
-    const [canvas_resize_counter, set_canvas_resize_counter] = useState(Number.MIN_SAFE_INTEGER);
+    const [dirty_counter, set_dirty_counter] = useState(Number.MIN_SAFE_INTEGER);
 
     const [mouse_position_screen, set_mouse_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_position_world, set_mouse_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
@@ -180,7 +186,7 @@ export function NCanvas() {
                     // console.log(`Setting Canvas size to ${entries[0].contentRect.width.toFixed(3)}, ${entries[0].contentRect.height.toFixed(3)}`)
                 }
                 
-                set_canvas_resize_counter(i => i + 1)
+                set_dirty_counter(i => i + 1)
             });
             resize_observer_ref.current.observe(canvas_host)
             // console.log("canvas host mounted");
@@ -192,7 +198,7 @@ export function NCanvas() {
             }
             // console.log("canvas host unmounted")
         }
-    }, [set_canvas_resize_counter]);
+    }, [set_dirty_counter]);
 
     // CANVAS RENDER
     if (canvas_ref.current) {
@@ -251,6 +257,28 @@ export function NCanvas() {
 
     return <div className="n-canvas-root">
         <div className="n-canvas-controls">
+            <SettingsMenu isOpen={false} onClose={()=>{}}>
+                <div className="grid grid-cols-1 gap-2 p-5">
+                <button onClick={()=>dispatch(ActionCreators.clearHistory())}>Clear Undo History</button>
+                <div className="grid grid-cols-2 gap-x-2 ml-3">
+                    <div>Past States: </div><div>{undo_history.past_states}</div>
+                    <div>Future States: </div><div>{undo_history.future_states}</div>
+                    <div>Limit: </div><div>{undo_history.limit}</div>
+                </div>
+                <button onClick={()=>{
+                    localStorage.clear();
+                    set_dirty_counter(i=>i+1);
+                }}>Clear Local Storage</button>
+                <div className="grid grid-cols-2 gap-x-2 ml-3">
+                    <div>Size: </div><div>{JSON.stringify(localStorage).length}</div>
+                </div>
+                <button onClick={()=>dispatch(actions.graph.clear_all())}>Delete All</button>
+                <div className="grid grid-cols-2 gap-x-2 ml-3">
+                    <div>Nodes: </div><div>{nodes.length}</div>
+                    <div>Edges: </div><div>{edges.length}</div>
+                </div>
+                </div>
+            </SettingsMenu>
             <button onClick={()=>dispatch(ActionCreators.undo())}>Undo</button>
             <button onClick={()=>dispatch(ActionCreators.redo())}>Redo</button>
             <button onClick={() => {
@@ -263,9 +291,7 @@ export function NCanvas() {
                 }; // Example structure
                 dispatch(actions.graph.add_node(newNode));
             }}>Add Node</button>
-            <button onClick={()=>dispatch(ActionCreators.clearHistory())}>Clear Undo History</button>
-            <button onClick={()=>localStorage.clear()}>Clear Local Storage</button>
-            <button onClick={()=>dispatch(actions.graph.clear_all())}>Delete All</button>
+            
             <button onClick={()=>dispatch(actions.viewport.reset())}>Reset View</button>
             <MouseToolModeControls mouse_tool_mode={mouse_tool_mode} set_mouse_tool_mode={set_mouse_tool_mode}/>
             <div className="grid grid-cols-2 gap-2 text-[0.8em] font-mono">

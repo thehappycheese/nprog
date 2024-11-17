@@ -43,7 +43,6 @@ const graph_slice = createSlice({
                 new_zoom
             ).as_viewport();
         },
-        
         zoom_out_from: (state, action: PayloadAction<{target_screen_position:Vector2.Vector2, screen_size:Vector2.Vector2}>) => {
             let {
                 target_screen_position,

@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+dialog:not([open]) {
+    display: none;
+}
+
 :root {
   font-family: sans-serif;
   color:white;
