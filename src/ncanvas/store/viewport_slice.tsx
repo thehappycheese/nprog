@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import * as Vector2 from '../Vector2';
 import { ViewportTransform } from '../ViewportTransform';
+import { Vector2 } from '../Vector2';
 
 export interface Viewport {
     midpoint: Vector2.Vector2,
@@ -24,11 +24,11 @@ const graph_slice = createSlice({
         },
         reset: () => {
             return {
-                zoom:1,
-                midpoint:{x:0,y:0}
+                zoom: 1,
+                midpoint: { x: 0, y: 0 }
             }
         },
-        zoom_in_to: (state, action: PayloadAction<{target_screen_position:Vector2.Vector2, screen_size:Vector2.Vector2}>) => {
+        zoom_in_to: (state, action: PayloadAction<{ target_screen_position: Vector2.Vector2, screen_size: Vector2.Vector2 }>) => {
             let {
                 target_screen_position,
                 screen_size,
@@ -43,7 +43,7 @@ const graph_slice = createSlice({
                 new_zoom
             ).as_viewport();
         },
-        zoom_out_from: (state, action: PayloadAction<{target_screen_position:Vector2.Vector2, screen_size:Vector2.Vector2}>) => {
+        zoom_out_from: (state, action: PayloadAction<{ target_screen_position: Vector2.Vector2, screen_size: Vector2.Vector2 }>) => {
             let {
                 target_screen_position,
                 screen_size,

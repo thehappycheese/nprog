@@ -1,5 +1,5 @@
+import { Vector2 } from "../Vector2";
 import { ViewportTransform } from "../ViewportTransform";
-import * as Vector2 from "../Vector2";
 
 export interface GridStyle {
     grid_spacing: number,
@@ -18,10 +18,10 @@ export function draw_grid(
     let spacing = style.grid_spacing;
 
     // Adjust grid spacing based on minimum_spacing_px
-    let initial_screen_spacing = viewport.scale_world_to_screen(spacing);
+    let initial_screen_spacing = viewport.scalar_world_to_screen(spacing);
     while (initial_screen_spacing < style.minimum_spacing_px) {
         spacing *= 15;
-        initial_screen_spacing = viewport.scale_world_to_screen(spacing);
+        initial_screen_spacing = viewport.scalar_world_to_screen(spacing);
     }
 
     const start_x = Math.floor(top_left.x / spacing) * spacing;
@@ -38,7 +38,7 @@ export function draw_grid(
     ctx.translate(0.5, 0.5);
     ctx.strokeStyle = style.color;
     ctx.lineWidth = style.line_width;
-    ctx.setLineDash([2, 3]);
+    ctx.setLineDash([8, 2]);
 
     // Draw vertical grid lines
     for (let i = 0; i < grid_lines_x; i++) {
@@ -50,7 +50,7 @@ export function draw_grid(
         const screen_point_top = viewport.world_to_screen(world_point_top);
         const screen_point_bottom = viewport.world_to_screen(world_point_bottom);
 
-        ctx.lineDashOffset = viewport.scale_world_to_screen(top_left.y);
+        ctx.lineDashOffset = viewport.scalar_world_to_screen(top_left.y);
 
         ctx.beginPath();
         ctx.moveTo(Math.round(screen_point_top.x), screen_point_top.y);
@@ -68,7 +68,7 @@ export function draw_grid(
         const screen_point_left = viewport.world_to_screen(world_point_left);
         const screen_point_right = viewport.world_to_screen(world_point_right);
 
-        ctx.lineDashOffset = viewport.scale_world_to_screen(top_left.x);
+        ctx.lineDashOffset = viewport.scalar_world_to_screen(top_left.x);
 
         ctx.beginPath();
         ctx.moveTo(screen_point_left.x, Math.round(screen_point_left.y));

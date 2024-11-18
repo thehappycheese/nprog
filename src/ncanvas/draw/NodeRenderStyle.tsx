@@ -19,11 +19,11 @@ type NodeRenderStyle = {
 }
 
 export const default_node_style: () => NodeRenderStyle = () => ({
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: "sans-serif",
     title: {
         backgroundColor: "#be2840",
-        height: 19,
+        height: 25,
     },
     body: {
         backgroundColor: "#333",

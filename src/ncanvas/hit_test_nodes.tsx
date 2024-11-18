@@ -1,5 +1,6 @@
-import * as Vector2 from "./Vector2";
+
 import { GraphNode } from "./graph_types";
+import { Vector2 } from "./Vector2";
 
 
 export function hit_test_nodes(

@@ -1,3 +1,3 @@
 
 
-export const nodes:Array<NodeDeclaration> = []
+export {NodeTau} from "./tau";
