@@ -18,7 +18,7 @@ const initialState: GraphState = {
     nodes: [
         {
             id:"node-0",
-            title:"input",
+            title:"Tau",
             position:{x:50, y:50},
             size:{x:150, y:50},
             registered_type:"tau",
@@ -26,10 +26,10 @@ const initialState: GraphState = {
 
         {
             id:"node-1",
-            title:"output",
+            title:"Output",
             position:{x:250, y:130},
             size:{x:150, y:50},
-            registered_type:"tau"
+            registered_type:"output"
         },
 
     ],

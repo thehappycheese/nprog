@@ -1,4 +1,4 @@
-import { NodeTau } from "./nodes";
+import { NodeOutput, NodeTau } from "./nodes";
 import { Vector2 } from "./Vector2";
 
 // Define a Handle, which represents connection points on nodes
@@ -26,9 +26,7 @@ export interface GraphEdge {
 }
 
 
-type RegisteredNodeType = (
-    "tau"
-)
+type RegisteredNodeType = "tau" | "output";
 
 export const NodeRegistry:Record<RegisteredNodeType, React.FC<{
     node: GraphNode;
@@ -36,7 +34,8 @@ export const NodeRegistry:Record<RegisteredNodeType, React.FC<{
     screen_position:Vector2.Vector2;
     screen_size: Vector2.Vector2;
     screen_padding: Vector2.Vector2;
-
+    font_scale:number;
 }>> = {
-    "tau":NodeTau
+    "tau":NodeTau,
+    "output":NodeOutput,
 }

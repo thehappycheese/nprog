@@ -1,5 +1,5 @@
+import { Vector2 } from "../Vector2";
 import { NodeRenderStyle } from "./NodeRenderStyle";
-import * as Vector2 from "../Vector2";
 
 export function draw_node_body_and_title_bar(
     ctx:CanvasRenderingContext2D,

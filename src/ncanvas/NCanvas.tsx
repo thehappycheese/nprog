@@ -51,18 +51,18 @@ export const NCanvas: React.FC = () => {
         future_states: state.graph.future.length,
         limit: state.graph.limit
     }));
-    const nodes = useSelector((state: RootState) => state.graph.present.nodes);
-    const edges = useSelector((state: RootState) => state.graph.present.edges);
+    const nodes    = useSelector((state: RootState) => state.graph.present.nodes);
+    const edges    = useSelector((state: RootState) => state.graph.present.edges);
     const viewport = useSelector((state: RootState) => state.viewport);
 
     // MARK: LOCAL STATE
     const [dirty_counter, set_dirty_counter] = useState(Number.MIN_SAFE_INTEGER);
 
-    const [mouse_position_screen, set_mouse_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
-    const [mouse_position_world, set_mouse_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
-    const [mouse_down_position_world, set_mouse_down_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
+    const [mouse_position_screen,      set_mouse_position_screen     ] = useState<Vector2.Vector2>({ x: 0, y: 0 });
+    const [mouse_position_world,       set_mouse_position_world      ] = useState<Vector2.Vector2>({ x: 0, y: 0 });
+    const [mouse_down_position_world,  set_mouse_down_position_world ] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down_position_screen, set_mouse_down_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
-    const [mouse_down, set_mouse_down] = useState(false);
+    const [mouse_down,                 set_mouse_down                ] = useState(false);
 
     const [mouse_tool_mode, set_mouse_tool_mode] = useState<MouseToolMode>({ type: "select" });
 
@@ -290,13 +290,11 @@ export const NCanvas: React.FC = () => {
                 ctx,
                 node_position,
                 Vector2.scale(node.size, viewport.zoom),
-                node.title + " [" + node.id + "]",
+                node.title,
                 current_node_style
             )
         }
         // MARK: >> draw edges
-
-
     }
 
     // MARK: DOM RENDER
@@ -388,6 +386,7 @@ export const NCanvas: React.FC = () => {
                 onWheel={handle_wheel_event}
             />
             {
+                // MARK: Node DOM Render
                 (() => {
                     let node_style = default_node_style(); // TODO: this is a bit dumb to have to call it here and in the canvas rendering code.
                     let transform = new ViewportTransform(viewport.zoom, viewport.midpoint, screen_size);
@@ -416,6 +415,7 @@ export const NCanvas: React.FC = () => {
                             transform.scale_only_world_to_screen(node.size),
                             node_title_offset
                         );
+
                         const NodeType = NodeRegistry[node.registered_type];
                         return <NodeType
                             key={node.id}
@@ -426,7 +426,7 @@ export const NCanvas: React.FC = () => {
                             }}
                             screen_position={node_screen_position}
                             screen_size={node_screen_size}
-                            
+                            font_scale={viewport.zoom}
                         />
                     })
                 })()

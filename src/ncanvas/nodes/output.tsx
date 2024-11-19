@@ -2,7 +2,7 @@ import { GraphNode } from "../graph_types.tsx";
 import { Vector2 } from "../Vector2.tsx";
 import { Handle, NodeBody } from "./basics.tsx";
 
-export function NodeTau(props: {
+export function NodeOutput(props: {
     node: GraphNode;
     screen_position: Vector2.Vector2;
     screen_size: Vector2.Vector2;
@@ -18,9 +18,9 @@ export function NodeTau(props: {
         <div
             className="grid grid-cols-[auto_1fr_auto] gap-3 pt-2 pb-2 ml-[-2px] mr-[-2px]"
         >
-            <div className="relative"></div>
-            <div className="text-end">Tau</div>
             <div className="relative"><Handle /></div>
+            <div className="text-end">Output</div>
+            <div className="relative"></div>
         </div>
     </NodeBody>
 }

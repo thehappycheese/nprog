@@ -1,5 +1,5 @@
 
-type NodeRenderStyle = {
+export type NodeRenderStyle = {
     fontSize: number;
     fontFamily: string;
     title: {
