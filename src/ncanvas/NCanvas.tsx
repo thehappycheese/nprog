@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { GraphNode, NodeRegistry } from "./graph_types";
+import { GraphNode, HandelReference, NodeRegistry } from "./graph_types";
 import { useDispatch, useSelector } from "react-redux";
 import { actions, RootState } from "./store";
 import { ActionCreators } from "redux-undo";
@@ -105,8 +105,8 @@ export const NCanvas: React.FC = () => {
     // MARK: POINTER EVENT
     const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLDivElement>) => {
         e.preventDefault();
-
-        const canvasRect = (e.target as HTMLDivElement).getBoundingClientRect();
+        if(canvas_host_ref.current === null) return
+        const canvasRect = canvas_host_ref.current.getBoundingClientRect();
         let x = e.clientX - canvasRect.left;
         let y = e.clientY - canvasRect.top;
         let new_position = { x, y };
@@ -138,7 +138,7 @@ export const NCanvas: React.FC = () => {
                     target_id: null
                 })
             }
-        } else if (e.type === "pointerup" || e.type === "pointerout") {
+        } else if (e.type === "pointerup"){ //|| e.type === "pointerout") {
             // MARK: >> pointer up/out
             set_mouse_down(false);
             if (active_item.type === "drag_node") {
@@ -172,10 +172,11 @@ export const NCanvas: React.FC = () => {
     // MARK: POINTERMOVE
     const handle_canvas_pointer_move_event = (e: React.PointerEvent<HTMLDivElement>) => {
         e.preventDefault();
-
-        const canvasRect = (e.target as HTMLDivElement).getBoundingClientRect();
+        if(canvas_host_ref.current === null) return
+        const canvasRect = canvas_host_ref.current.getBoundingClientRect();
         let x = e.clientX - canvasRect.left;
         let y = e.clientY - canvasRect.top;
+        
         let new_mouse_position = { x, y };
         let new_mouse_position_world = transform.screen_to_world(new_mouse_position);
 
@@ -298,25 +299,34 @@ export const NCanvas: React.FC = () => {
         }
         // MARK: >> draw edges
         if(handel_refs.current && canvas_host_ref.current){
-            for(let [node, handels] of Object.entries(handel_refs.current)){
-                for(let [handel, div] of Object.entries(handels)){
-                    // TODO: may have null div?
-                    // TODO: i dont think we are properly protected from disconnected dom yet?
-                    let hrect = div.getBoundingClientRect();
-                    let hostrect = canvas_host_ref.current.getBoundingClientRect();
-                    let hpos:Vector2.Vector2 = {
-                        x:hrect.left+hrect.width/2 - hostrect.left,
-                        y:hrect.top+hrect.height/2 - hostrect.top,
-                    };
-                    ctx.strokeStyle="red"
-                    ctx.lineWidth=10
-                    ctx.fillStyle="yellow"
-                    ctx.beginPath()
-                    ctx.moveTo(hpos.x-30, hpos.y);
-                    ctx.lineTo(hpos.x+30, hpos.y);
-                    ctx.stroke()
-                    ctx.fillText(node+"/"+handel, hpos.x, hpos.y);
-                }
+
+            let hrc = handel_refs.current;
+            let get_pos=(handel_reference:HandelReference)=>{
+                let hrect = hrc?.[handel_reference.node]?.[handel_reference.handel]?.getBoundingClientRect();
+                let hostrect = (canvas_host_ref.current as HTMLDivElement).getBoundingClientRect(); // TODO: unhappy lambda
+                let hpos:Vector2.Vector2 = {
+                    x:hrect.left+hrect.width/2 - hostrect.left,
+                    y:hrect.top+hrect.height/2 - hostrect.top,
+                };
+                return hpos
+            }
+            for(let edge of edges){
+                let a = get_pos(edge.from);
+                let b = get_pos(edge.to);
+                let abx = Vector2.scale({x:Math.abs(b.x-a.x), y:0}, 0.5);
+                let c1 = Vector2.add(a, abx);
+                let c2 = Vector2.sub(b, abx);
+                ctx.strokeStyle="white";
+                ctx.lineWidth=3;
+
+                ctx.beginPath();
+                ctx.moveTo(a.x,a.y);
+                ctx.bezierCurveTo(
+                    c1.x,c1.y,
+                    c2.x,c2.y,
+                    b.x,b.y
+                );
+                ctx.stroke()
             }
         }
     }

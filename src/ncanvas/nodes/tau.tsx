@@ -2,6 +2,7 @@ import { ForwardedRef, forwardRef } from "react";
 import { GraphNode } from "../graph_types.tsx";
 import { Vector2 } from "../Vector2.tsx";
 import { Handle, NodeBody } from "./basics.tsx";
+import { assignHandelRef } from "./assignHandelRef.tsx";
 
 export const NodeTau= forwardRef(
     (
@@ -25,7 +26,11 @@ export const NodeTau= forwardRef(
         >
             <div className="relative"></div>
             <div className="text-end">Tau</div>
-            <div className="relative"><Handle background_color="white"/></div>
+            <div className="relative">
+                <Handle
+                    background_color="white"
+                    ref = {assignHandelRef(ref, props.node.id, "H1")}
+                /></div>
         </div>
     </NodeBody>
 });

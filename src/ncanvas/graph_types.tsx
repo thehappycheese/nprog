@@ -16,17 +16,16 @@ export interface GraphNode {
     registered_type:RegisteredNodeType
 }
 
+export interface HandelReference {
+    node:string,
+    handel:string
+}
+
 // Edge interface representing the connections between nodes
 export interface GraphEdge {
     id: string;
-    from:{
-        node:string,
-        handel:string,
-    },
-    to:{
-        node:string,
-        handel:string,
-    }
+    from:HandelReference,
+    to:HandelReference
 }
 
 
