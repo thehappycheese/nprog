@@ -44,6 +44,7 @@ export const NCanvas: React.FC = () => {
     const canvas_host_ref = useRef<HTMLDivElement | null>(null);
     const resize_observer_ref = useRef<ResizeObserver | null>(null);
 
+    const handel_refs = useRef<Record<string,Record<string, HTMLDivElement>>>({})
     // MARK: REDUX STATE
     const dispatch = useDispatch();
     const undo_history = useSelector((state: RootState) => ({
@@ -102,10 +103,10 @@ export const NCanvas: React.FC = () => {
     // )
 
     // MARK: POINTER EVENT
-    const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLDivElement>) => {
         e.preventDefault();
 
-        const canvasRect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+        const canvasRect = (e.target as HTMLDivElement).getBoundingClientRect();
         let x = e.clientX - canvasRect.left;
         let y = e.clientY - canvasRect.top;
         let new_position = { x, y };
@@ -169,10 +170,10 @@ export const NCanvas: React.FC = () => {
     };
 
     // MARK: POINTERMOVE
-    const handle_canvas_pointer_move_event = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const handle_canvas_pointer_move_event = (e: React.PointerEvent<HTMLDivElement>) => {
         e.preventDefault();
 
-        const canvasRect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+        const canvasRect = (e.target as HTMLDivElement).getBoundingClientRect();
         let x = e.clientX - canvasRect.left;
         let y = e.clientY - canvasRect.top;
         let new_mouse_position = { x, y };
@@ -202,7 +203,7 @@ export const NCanvas: React.FC = () => {
         }
 
     }
-    const handle_wheel_event = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    const handle_wheel_event = (e: React.WheelEvent<HTMLDivElement>) => {
         if (e.deltaY < 0) {
             dispatch(actions.viewport.zoom_in_to({
                 target_screen_position: mouse_position_screen,
@@ -220,6 +221,7 @@ export const NCanvas: React.FC = () => {
         // const canvas = canvas_ref.current;
         // if(!canvas) return;
         if (canvas_host) {
+            canvas_host_ref.current = canvas_host;
             resize_observer_ref.current = new ResizeObserver(entries => {
                 const canvas = canvas_ref.current;
                 if (!canvas) return;
@@ -295,6 +297,28 @@ export const NCanvas: React.FC = () => {
             )
         }
         // MARK: >> draw edges
+        if(handel_refs.current && canvas_host_ref.current){
+            for(let [node, handels] of Object.entries(handel_refs.current)){
+                for(let [handel, div] of Object.entries(handels)){
+                    // TODO: may have null div?
+                    // TODO: i dont think we are properly protected from disconnected dom yet?
+                    let hrect = div.getBoundingClientRect();
+                    let hostrect = canvas_host_ref.current.getBoundingClientRect();
+                    let hpos:Vector2.Vector2 = {
+                        x:hrect.left+hrect.width/2 - hostrect.left,
+                        y:hrect.top+hrect.height/2 - hostrect.top,
+                    };
+                    ctx.strokeStyle="red"
+                    ctx.lineWidth=10
+                    ctx.fillStyle="yellow"
+                    ctx.beginPath()
+                    ctx.moveTo(hpos.x-30, hpos.y);
+                    ctx.lineTo(hpos.x+30, hpos.y);
+                    ctx.stroke()
+                    ctx.fillText(node+"/"+handel, hpos.x, hpos.y);
+                }
+            }
+        }
     }
 
     // MARK: DOM RENDER
@@ -373,17 +397,17 @@ export const NCanvas: React.FC = () => {
         <div
             className="n-canvas-canvas-host"
             ref={canvas_resize_callback}
-            
-            >
+            onPointerMove={handle_canvas_pointer_move_event}
+            onPointerDown={handle_canvas_pointer_event}
+            onPointerUp={handle_canvas_pointer_event}
+            onPointerOut={handle_canvas_pointer_event}
+            onPointerOver={handle_canvas_pointer_event}
+            onWheel={handle_wheel_event}
+        >
             <canvas
                 className="n-canvas-canvas rounded-md bg-level-1 w-full h-full select-none"
                 ref={canvas_ref}
-                onPointerMove={handle_canvas_pointer_move_event}
-                onPointerDown={handle_canvas_pointer_event}
-                onPointerUp={handle_canvas_pointer_event}
-                onPointerOut={handle_canvas_pointer_event}
-                onPointerOver={handle_canvas_pointer_event}
-                onWheel={handle_wheel_event}
+                
             />
             {
                 // MARK: Node DOM Render
@@ -427,6 +451,7 @@ export const NCanvas: React.FC = () => {
                             screen_position={node_screen_position}
                             screen_size={node_screen_size}
                             font_scale={viewport.zoom}
+                            ref={handel_refs}
                         />
                     })
                 })()

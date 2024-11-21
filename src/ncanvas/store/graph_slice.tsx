@@ -33,7 +33,19 @@ const initialState: GraphState = {
         },
 
     ],
-    edges: [],
+    edges: [
+        {
+            id:"edge-0",
+            from:{
+                node:"node-0",
+                handel:"H1",
+            },
+            to:{
+                node:"node-1",
+                handel:"H1"
+            }
+        }
+    ],
     selected:[]
 };
 

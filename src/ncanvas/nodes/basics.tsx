@@ -1,5 +1,6 @@
-import React from "react";
+import React, { ForwardedRef, forwardRef, MutableRefObject, useLayoutEffect } from "react";
 import { Vector2 } from "../Vector2.tsx";
+import { Rect } from "../Rect.tsx";
 
 
 export function NodeBody(props: {
@@ -21,7 +22,7 @@ export function NodeBody(props: {
             //pointerEvents: "none",
             transform: `translate(${props.screen_position.x}px, ${props.screen_position.y}px)`,
             border: "2px solid rgb(117, 102, 98)",
-            backgroundColor:"#333",
+            backgroundColor:"#333A",
             borderTop:"none",
             borderRadius: "0 0 5px 5px",
             boxSizing:"border-box",
@@ -32,17 +33,20 @@ export function NodeBody(props: {
     </div>
 }
 
-export function Handle() {
+export const Handle = forwardRef((props:{
+    background_color:string
+}, ref:ForwardedRef<HTMLDivElement>) => {
     const handle_size = 10;
     return <div
+        ref={ref}
         style={{
             width: `${handle_size}px`,
             height: `${handle_size}px`,
             borderRadius: `${handle_size/2}px`,
-            backgroundColor: "white",
+            backgroundColor: props.background_color,
             position: "absolute",
             left: `${-handle_size/2}px`,
             top:`calc(50% - ${handle_size/2}px)`,
         }}
     ></div>
-}
+})
