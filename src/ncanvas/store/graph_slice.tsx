@@ -42,7 +42,7 @@ const initial_state: GraphState = {
         },
         {
             id: "node-3",
-            title: "Add",
+            title: "Multiply",
             position: { x: 150, y: 230 },
             registered_type: "add",
             data: null,
