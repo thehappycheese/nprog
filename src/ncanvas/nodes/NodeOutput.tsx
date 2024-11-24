@@ -12,9 +12,10 @@ export const NodeOutput = forwardRef(
     ) => {
 
         return <NodeBody
-            title={props.node.title}
-            screen_position={props.screen_position}
-            font_scale={props.font_scale}
+            // title={props.node.title}
+            // screen_position={props.screen_position}
+            // font_scale={props.font_scale}
+            {...props}
         >
             <div
                 className="grid grid-cols-[auto_1fr_auto] gap-3 pt-2 pb-2 ml-[-2px] mr-[-2px]"
