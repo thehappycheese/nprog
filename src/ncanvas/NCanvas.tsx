@@ -222,44 +222,16 @@ export const NCanvas: React.FC = () => {
             }
         )
 
-        // MARK: >> draw nodes
-        // for (const node of nodes) {
-
-
-        //     let is_being_dragged = is_active_item && active_item.type === "drag_node";
-
-
-        //     let current_node_style = default_node_style();
-
-        //     let node_position = node.position;
-        //     if (is_being_dragged) {
-        //         node_position = Vector2.add(
-        //             node.position,
-        //             Vector2.sub(
-        //                 transform.screen_to_world(mouse_position_screen),
-        //                 mouse_down_position_world
-        //             )
-        //         );
-        //     }
-        //     node_position = transform.world_to_screen(node_position)
-        //     draw_node_body_and_title_bar(
-        //         ctx,
-        //         node_position,
-        //         Vector2.scale(node.size, viewport.zoom),
-        //         node.title,
-        //         current_node_style
-        //     )
-        // }
         // MARK: >> draw edges
         if (handel_refs.current && canvas_host_ref.current) {
 
             let hrc = handel_refs.current;
             let get_pos = (handel_reference: HandelReference) => {
-                let hrect = hrc?.[handel_reference.node]?.[handel_reference.handel]?.getBoundingClientRect();
-                let hostrect = (canvas_host_ref.current as HTMLDivElement).getBoundingClientRect(); // TODO: unhappy lambda
+                let h_rect = hrc?.[handel_reference.node]?.[handel_reference.handel]?.getBoundingClientRect();
+                let host_rect = (canvas_host_ref.current as HTMLDivElement).getBoundingClientRect(); // TODO: unhappy lambda
                 let hpos: Vector2.Vector2 = {
-                    x: hrect.left + hrect.width / 2 - hostrect.left,
-                    y: hrect.top + hrect.height / 2 - hostrect.top,
+                    x: h_rect.left + h_rect.width / 2 - host_rect.left,
+                    y: h_rect.top + h_rect.height / 2 - host_rect.top,
                 };
                 return hpos
             }
