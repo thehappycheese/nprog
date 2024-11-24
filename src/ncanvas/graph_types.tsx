@@ -1,4 +1,5 @@
 import { NodeOutput, NodeTau } from "./nodes";
+import { NodeAdd } from "./nodes/add";
 import { Vector2 } from "./Vector2";
 
 // Define a Handle, which represents connection points on nodes
@@ -12,7 +13,6 @@ export interface GraphNode {
     id: string;
     title: string;
     position: Vector2.Vector2;
-    size: Vector2.Vector2;
     registered_type: RegisteredNodeType
 }
 
@@ -29,17 +29,16 @@ export interface GraphEdge {
 }
 
 
-export type RegisteredNodeType = "tau" | "output";
+export type RegisteredNodeType = "tau" | "output" | "add";
 
 
 
-export type NodeProps = {
+export type NodeProps = React.HTMLAttributes<HTMLDivElement> & {
     node: GraphNode;
     screen_position: Vector2.Vector2;
-    screen_size: Vector2.Vector2;
     screen_padding: Vector2.Vector2;
     font_scale: number;
-} & React.HTMLAttributes<HTMLDivElement>;
+};
 
 
 
@@ -52,4 +51,5 @@ export const NodeRegistry: Record<
 > = {
     "tau": NodeTau,
     "output": NodeOutput,
+    "add": NodeAdd,
 }

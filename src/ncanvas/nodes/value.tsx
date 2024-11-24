@@ -4,24 +4,32 @@ import { Handle, NodeBody, NodeBodyRow } from "./basics.tsx";
 import { assignHandelRef } from "./assignHandelRef.tsx";
 
 
-
-
-
-export const NodeTau = forwardRef(
+export const NodeValue = forwardRef(
     (
         props: NodeProps,
         ref: ForwardedRef<Record<string, Record<string, HTMLDivElement>>>
     ) => {
+
         return <NodeBody
             {...props}
         >
             <NodeBodyRow
-                handel_right={<Handle
+                handel_left={<Handle
                     background_color="white"
-                    ref={assignHandelRef(ref, props.node.id, "H1")}
+                    ref={assignHandelRef(ref, props.node.id, "L1")}
                 />}
             >
-                Tau
+                <input type="number" />
             </NodeBodyRow>
+
+            <NodeBodyRow
+                handel_right={<Handle
+                    background_color="white"
+                    ref={assignHandelRef(ref, props.node.id, "R1")}
+                />}
+            >
+                Output
+            </NodeBodyRow>
+
         </NodeBody>
     });

@@ -18,10 +18,10 @@ export const NodeOutput = forwardRef(
             >
                 <div className="relative">
                     <Handle
-                        background_color="green"
+                        background_color="white"
                         ref={assignHandelRef(ref, props.node.id, "H1")}
                     /></div>
-                <div className="text-end">Output</div>
+                <div className="text-start">Output</div>
                 <div className="relative"></div>
             </div>
         </NodeBody>

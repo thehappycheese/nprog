@@ -11,6 +11,7 @@ import { ViewportTransform } from "./ViewportTransform";
 import SettingsMenu from "./components/SettingsMenu";
 import { useConstrainedNumber } from "./hooks/useConstrainedNumber";
 import { Vector2 } from "./Vector2";
+import helpers from "./helpers";
 
 // MARK: type ActiveItem
 type ActiveItem = {
@@ -88,22 +89,19 @@ export const NCanvas: React.FC = () => {
         screen_size
     );
 
-    // MARK: POINTER EVENT
-    const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLDivElement>) => {
-        const canvasRect = e.currentTarget.getBoundingClientRect();
-        let x = e.clientX - canvasRect.left;
-        let y = e.clientY - canvasRect.top;
-        let new_position = { x, y };
-        let new_position_world = transform.screen_to_world(new_position)
 
-        set_mouse_position_screen(new_position);
-        set_mouse_position_world(new_position_world);
+
+    // MARK: POINTER EVENT
+    const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLElement>) => {
+        let { mouse_position, mouse_position_world } = helpers.mouse_positions(e, transform);
+        set_mouse_position_screen(mouse_position);
+        set_mouse_position_world(mouse_position_world);
 
         if (e.type === "pointerdown") {
             // MARK: >> pointerdown
             set_mouse_down(true);
-            set_mouse_down_position_screen(new_position);
-            set_mouse_down_position_world(new_position_world);
+            set_mouse_down_position_screen(mouse_position);
+            set_mouse_down_position_world(mouse_position_world);
             if (e.target === canvas_ref.current) {
                 set_active_item({
                     type: "drag_canvas",
@@ -116,7 +114,7 @@ export const NCanvas: React.FC = () => {
             if (active_item.type === "drag_node") {
                 dispatch(actions.graph.offset_node({
                     id: active_item.target_id,
-                    offset: Vector2.sub(new_position_world, active_item.mouse_down_coord)
+                    offset: Vector2.sub(mouse_position_world, active_item.mouse_down_coord)
                 }))
                 set_active_item({ type: "none", target_id: null });
             } else if (active_item.type === "drag_canvas") {
@@ -147,31 +145,25 @@ export const NCanvas: React.FC = () => {
 
     // MARK: POINTERMOVE
     const handle_canvas_pointer_move_event = (e: React.PointerEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        if (canvas_host_ref.current === null) return
-        set_dirty_counter(i => i + 1);
-        const canvasRect = canvas_host_ref.current.getBoundingClientRect();
-        let x = e.clientX - canvasRect.left;
-        let y = e.clientY - canvasRect.top;
-
-        let new_mouse_position = { x, y };
-        let new_mouse_position_world = transform.screen_to_world(new_mouse_position);
-
-        set_mouse_position_screen(new_mouse_position);
-        set_mouse_position_world(new_mouse_position_world);
-
+        let { mouse_position, mouse_position_world } = helpers.mouse_positions(e, transform);
+        set_mouse_position_screen(mouse_position);
+        set_mouse_position_world(mouse_position_world);
     }
+
+    // MARK: WHEEL
     const handle_wheel_event = (e: React.WheelEvent<HTMLDivElement>) => {
         if (e.deltaY < 0) {
             dispatch(actions.viewport.zoom_in_to({
                 target_screen_position: mouse_position_screen,
                 screen_size
             }));
+            set_dirty_counter(i => i + 1);
         } else if (e.deltaY > 0) {
             dispatch(actions.viewport.zoom_out_from({
                 target_screen_position: mouse_position_screen,
                 screen_size
             }));
+            set_dirty_counter(i => i + 1);
         }
     }
 
@@ -203,7 +195,6 @@ export const NCanvas: React.FC = () => {
         }
     }, [set_dirty_counter]);
 
-    //useLayoutEffect(()=>{
     // MARK: CANVAS RENDER
     if (canvas_ref.current) {
         const canvas = canvas_ref.current;
@@ -223,21 +214,25 @@ export const NCanvas: React.FC = () => {
         )
 
         // MARK: >> draw edges
-        if (handel_refs.current && canvas_host_ref.current) {
+        if (canvas_host_ref.current !== null) {
 
-            let hrc = handel_refs.current;
-            let get_pos = (handel_reference: HandelReference) => {
-                let h_rect = hrc?.[handel_reference.node]?.[handel_reference.handel]?.getBoundingClientRect();
-                let host_rect = (canvas_host_ref.current as HTMLDivElement).getBoundingClientRect(); // TODO: unhappy lambda
-                let hpos: Vector2.Vector2 = {
-                    x: h_rect.left + h_rect.width / 2 - host_rect.left,
-                    y: h_rect.top + h_rect.height / 2 - host_rect.top,
+            let get_handel_position = (
+                handel_reference: HandelReference,
+                handel_refs: Record<string, Record<string, HTMLDivElement>>,
+                host: HTMLDivElement
+            ) => {
+                let host_rect = host.getBoundingClientRect();
+                let handel_rect = handel_refs?.[handel_reference.node]?.[handel_reference.handel]?.getBoundingClientRect();
+                let handel_position: Vector2.Vector2 = {
+                    x: handel_rect.left + handel_rect.width / 2 - host_rect.left,
+                    y: handel_rect.top + handel_rect.height / 2 - host_rect.top,
                 };
-                return hpos
+                return handel_position
             }
+
             for (let edge of edges) {
-                let a = get_pos(edge.from);
-                let b = get_pos(edge.to);
+                let a = get_handel_position(edge.from, handel_refs.current, canvas_host_ref.current);
+                let b = get_handel_position(edge.to, handel_refs.current, canvas_host_ref.current);
                 let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
                 let c1 = Vector2.add(a, abx);
                 let c2 = Vector2.sub(b, abx);
@@ -255,9 +250,6 @@ export const NCanvas: React.FC = () => {
             }
         }
     }
-    // },[
-    //     // ??
-    // ]);
 
     // MARK: DOM RENDER
     return <div className="n-canvas-root">
@@ -305,7 +297,6 @@ export const NCanvas: React.FC = () => {
                     id: `node-${nodes.length + 1}`,
                     title: 'New Node',
                     position: mouse_position_screen,
-                    size: { x: 150, y: 50 },
                     registered_type: "tau",
                 }; // Example structure
                 dispatch(actions.graph.add_node(newNode));
@@ -343,17 +334,16 @@ export const NCanvas: React.FC = () => {
             <canvas
                 className="n-canvas-canvas rounded-md bg-level-1 w-full h-full select-none"
                 ref={canvas_ref}
-
             />
             {
                 // MARK: Node DOM Render
                 (() => {
                     let node_style = default_node_style(); // TODO: this is a bit dumb to have to call it here and in the canvas rendering code.
                     return nodes.map(node => {
-                        const is_active_item = active_item.target_id === node.id;
-                        const is_being_dragged = is_active_item && active_item.type === "drag_node";
+
                         let node_position_world = node.position;
-                        if (is_being_dragged) {
+
+                        if (active_item.target_id === node.id && active_item.type === "drag_node") {
                             node_position_world = Vector2.add(
                                 node.position,
                                 Vector2.sub(
@@ -365,8 +355,6 @@ export const NCanvas: React.FC = () => {
 
                         const node_screen_position = transform.world_to_screen(node_position_world);
 
-                        const node_screen_size = transform.scale_only_world_to_screen(node.size);
-
                         const NodeType = NodeRegistry[node.registered_type];
                         return <NodeType
                             key={node.id}
@@ -376,20 +364,16 @@ export const NCanvas: React.FC = () => {
                                 y: node_style.padding
                             }}
                             screen_position={node_screen_position}
-                            screen_size={node_screen_size}
+
                             font_scale={viewport.zoom}
                             ref={handel_refs}
                             onPointerDown={e => {
                                 e.preventDefault();
-                                const canvasRect = canvas_host_ref.current!.getBoundingClientRect();
-                                let x = e.clientX - canvasRect.left;
-                                let y = e.clientY - canvasRect.top;
-                                let event_mouse_position = { x, y };
-                                let event_mouse_position_world = transform.screen_to_world(event_mouse_position)
+                                let { mouse_position_world } = helpers.mouse_positions(e, transform, canvas_host_ref.current!);
                                 set_active_item({
                                     type: "drag_node",
                                     target_id: node.id,
-                                    mouse_down_coord: event_mouse_position_world
+                                    mouse_down_coord: mouse_position_world
                                 })
                             }}
                         />
