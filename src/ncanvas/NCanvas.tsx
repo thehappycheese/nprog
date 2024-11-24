@@ -5,9 +5,7 @@ import { actions, RootState } from "./store";
 import { ActionCreators } from "redux-undo";
 
 import { MouseToolMode, MouseToolModeControls } from "./components/MouseToolModeControls";
-import { hit_test_nodes } from "./hit_test_nodes";
 import { default_node_style } from "./draw/NodeRenderStyle";
-import { draw_node_body_and_title_bar } from "./draw/node_body_and_title_bar";
 import { draw_grid } from "./draw/grid";
 import { ViewportTransform } from "./ViewportTransform";
 import SettingsMenu from "./components/SettingsMenu";
@@ -21,9 +19,6 @@ type ActiveItem = {
 } | {
     type: "drag_canvas",
     target_id: null,
-} | {
-    type: "hover_node",
-    target_id: string
 } | {
     type: "hover_edge",
     target_id: string
@@ -44,7 +39,7 @@ export const NCanvas: React.FC = () => {
     const canvas_host_ref = useRef<HTMLDivElement | null>(null);
     const resize_observer_ref = useRef<ResizeObserver | null>(null);
 
-    const handel_refs = useRef<Record<string,Record<string, HTMLDivElement>>>({})
+    const handel_refs = useRef<Record<string, Record<string, HTMLDivElement>>>({})
     // MARK: REDUX STATE
     const dispatch = useDispatch();
     const undo_history = useSelector((state: RootState) => ({
@@ -52,18 +47,18 @@ export const NCanvas: React.FC = () => {
         future_states: state.graph.future.length,
         limit: state.graph.limit
     }));
-    const nodes    = useSelector((state: RootState) => state.graph.present.nodes);
-    const edges    = useSelector((state: RootState) => state.graph.present.edges);
+    const nodes = useSelector((state: RootState) => state.graph.present.nodes);
+    const edges = useSelector((state: RootState) => state.graph.present.edges);
     const viewport = useSelector((state: RootState) => state.viewport);
 
     // MARK: LOCAL STATE
     const [dirty_counter, set_dirty_counter] = useState(Number.MIN_SAFE_INTEGER);
 
-    const [mouse_position_screen,      set_mouse_position_screen     ] = useState<Vector2.Vector2>({ x: 0, y: 0 });
-    const [mouse_position_world,       set_mouse_position_world      ] = useState<Vector2.Vector2>({ x: 0, y: 0 });
-    const [mouse_down_position_world,  set_mouse_down_position_world ] = useState<Vector2.Vector2>({ x: 0, y: 0 });
+    const [mouse_position_screen, set_mouse_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
+    const [mouse_position_world, set_mouse_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
+    const [mouse_down_position_world, set_mouse_down_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down_position_screen, set_mouse_down_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
-    const [mouse_down,                 set_mouse_down                ] = useState(false);
+    const [mouse_down, set_mouse_down] = useState(false);
 
     const [mouse_tool_mode, set_mouse_tool_mode] = useState<MouseToolMode>({ type: "select" });
 
@@ -71,7 +66,6 @@ export const NCanvas: React.FC = () => {
 
     const [grid_spacing, set_grid_spacing] = useConstrainedNumber(50, [5, 1000]);
 
-    const [node_hit_test_result, set_node_hit_test_result] = useState("");
 
     const screen_size: Vector2.Vector2 = (
         canvas_ref.current
@@ -93,20 +87,10 @@ export const NCanvas: React.FC = () => {
         offset_viewport_midpoint,
         screen_size
     );
-    // const transform_offset = new ViewportTransform(
-    //     viewport.zoom,
-    //     Vector2.add(
-    //         offset_viewport_midpoint,
-
-    //     ),
-    //     screen_size,
-    // )
 
     // MARK: POINTER EVENT
     const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        if(canvas_host_ref.current === null) return
-        const canvasRect = canvas_host_ref.current.getBoundingClientRect();
+        const canvasRect = e.currentTarget.getBoundingClientRect();
         let x = e.clientX - canvasRect.left;
         let y = e.clientY - canvasRect.top;
         let new_position = { x, y };
@@ -120,36 +104,21 @@ export const NCanvas: React.FC = () => {
             set_mouse_down(true);
             set_mouse_down_position_screen(new_position);
             set_mouse_down_position_world(new_position_world);
-
-            // Handle drag node?
-            // TODO: abstract somehow?
-            // TODO: handle transforms?
-            let result = hit_test_nodes(nodes, new_position_world);
-            console.log("Pointer Down Hit Test", result)
-            if (result) {
-                set_active_item({
-                    type: "drag_node",
-                    mouse_down_coord: new_position_world,
-                    target_id: result.id
-                })
-            } else {
+            if (e.target === canvas_ref.current) {
                 set_active_item({
                     type: "drag_canvas",
                     target_id: null
                 })
             }
-        } else if (e.type === "pointerup"){ //|| e.type === "pointerout") {
-            // MARK: >> pointer up/out
+        } else if (e.type === "pointerup") {
+            // MARK: >> pointer up
             set_mouse_down(false);
             if (active_item.type === "drag_node") {
                 dispatch(actions.graph.offset_node({
                     id: active_item.target_id,
                     offset: Vector2.sub(new_position_world, active_item.mouse_down_coord)
                 }))
-                set_active_item({
-                    type: "hover_node",
-                    target_id: active_item.target_id,
-                })
+                set_active_item({ type: "none", target_id: null });
             } else if (active_item.type === "drag_canvas") {
                 dispatch(actions.viewport.translate(offset_screen))
                 set_active_item({
@@ -157,6 +126,13 @@ export const NCanvas: React.FC = () => {
                     target_id: null,
                 })
             } else {
+                set_active_item({
+                    type: "none",
+                    target_id: null,
+                })
+            }
+        } else if (e.type === "pointerout") {
+            if (e.target === e.currentTarget) {
                 set_active_item({
                     type: "none",
                     target_id: null,
@@ -172,36 +148,17 @@ export const NCanvas: React.FC = () => {
     // MARK: POINTERMOVE
     const handle_canvas_pointer_move_event = (e: React.PointerEvent<HTMLDivElement>) => {
         e.preventDefault();
-        if(canvas_host_ref.current === null) return
+        if (canvas_host_ref.current === null) return
+        set_dirty_counter(i => i + 1);
         const canvasRect = canvas_host_ref.current.getBoundingClientRect();
         let x = e.clientX - canvasRect.left;
         let y = e.clientY - canvasRect.top;
-        
+
         let new_mouse_position = { x, y };
         let new_mouse_position_world = transform.screen_to_world(new_mouse_position);
 
-
         set_mouse_position_screen(new_mouse_position);
         set_mouse_position_world(new_mouse_position_world);
-
-        let result = hit_test_nodes(nodes, new_mouse_position_world);
-        set_node_hit_test_result(result?.id ?? "");
-        if (result) {
-            // MARK: BORKED
-            if (active_item.type === "none") { // TODO: this is a borked way to check for state transition
-                set_active_item({
-                    type: "hover_node",
-                    target_id: result.id
-                })
-            }
-        } else {
-            if (active_item.type == "hover_node") {
-                set_active_item({
-                    type: "none",
-                    target_id: null
-                })
-            }
-        }
 
     }
     const handle_wheel_event = (e: React.WheelEvent<HTMLDivElement>) => {
@@ -246,6 +203,7 @@ export const NCanvas: React.FC = () => {
         }
     }, [set_dirty_counter]);
 
+    //useLayoutEffect(()=>{
     // MARK: CANVAS RENDER
     if (canvas_ref.current) {
         const canvas = canvas_ref.current;
@@ -265,71 +223,69 @@ export const NCanvas: React.FC = () => {
         )
 
         // MARK: >> draw nodes
-        for (const node of nodes) {
+        // for (const node of nodes) {
 
-            let is_active_item = active_item.target_id === node.id;
-            let is_active = is_active_item && active_item.type === "hover_node";
-            let is_being_dragged = is_active_item && active_item.type === "drag_node";
-            // todo: must record mouse position in world coordinates at mouse_down to avoid nonsense if
-            // zooming while dragging at the same time
 
-            let current_node_style = default_node_style();
-            if (is_active) {
-                current_node_style.body.backgroundColor = current_node_style.body.highlight;
-                current_node_style.border.color = current_node_style.body.highlight;
-            }
-            let node_position = node.position;
-            if (is_being_dragged) {
-                node_position = Vector2.add(
-                    node.position,
-                    Vector2.sub(
-                        transform.screen_to_world(mouse_position_screen),
-                        mouse_down_position_world
-                    )
-                );
-            }
-            node_position = transform.world_to_screen(node_position)
-            draw_node_body_and_title_bar(
-                ctx,
-                node_position,
-                Vector2.scale(node.size, viewport.zoom),
-                node.title,
-                current_node_style
-            )
-        }
+        //     let is_being_dragged = is_active_item && active_item.type === "drag_node";
+
+
+        //     let current_node_style = default_node_style();
+
+        //     let node_position = node.position;
+        //     if (is_being_dragged) {
+        //         node_position = Vector2.add(
+        //             node.position,
+        //             Vector2.sub(
+        //                 transform.screen_to_world(mouse_position_screen),
+        //                 mouse_down_position_world
+        //             )
+        //         );
+        //     }
+        //     node_position = transform.world_to_screen(node_position)
+        //     draw_node_body_and_title_bar(
+        //         ctx,
+        //         node_position,
+        //         Vector2.scale(node.size, viewport.zoom),
+        //         node.title,
+        //         current_node_style
+        //     )
+        // }
         // MARK: >> draw edges
-        if(handel_refs.current && canvas_host_ref.current){
+        if (handel_refs.current && canvas_host_ref.current) {
 
             let hrc = handel_refs.current;
-            let get_pos=(handel_reference:HandelReference)=>{
+            let get_pos = (handel_reference: HandelReference) => {
                 let hrect = hrc?.[handel_reference.node]?.[handel_reference.handel]?.getBoundingClientRect();
                 let hostrect = (canvas_host_ref.current as HTMLDivElement).getBoundingClientRect(); // TODO: unhappy lambda
-                let hpos:Vector2.Vector2 = {
-                    x:hrect.left+hrect.width/2 - hostrect.left,
-                    y:hrect.top+hrect.height/2 - hostrect.top,
+                let hpos: Vector2.Vector2 = {
+                    x: hrect.left + hrect.width / 2 - hostrect.left,
+                    y: hrect.top + hrect.height / 2 - hostrect.top,
                 };
                 return hpos
             }
-            for(let edge of edges){
+            for (let edge of edges) {
                 let a = get_pos(edge.from);
                 let b = get_pos(edge.to);
-                let abx = Vector2.scale({x:Math.abs(b.x-a.x), y:0}, 0.5);
+                let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
                 let c1 = Vector2.add(a, abx);
                 let c2 = Vector2.sub(b, abx);
-                ctx.strokeStyle="white";
-                ctx.lineWidth=3;
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 3;
 
                 ctx.beginPath();
-                ctx.moveTo(a.x,a.y);
+                ctx.moveTo(a.x, a.y);
                 ctx.bezierCurveTo(
-                    c1.x,c1.y,
-                    c2.x,c2.y,
-                    b.x,b.y
+                    c1.x, c1.y,
+                    c2.x, c2.y,
+                    b.x, b.y
                 );
                 ctx.stroke()
             }
         }
     }
+    // },[
+    //     // ??
+    // ]);
 
     // MARK: DOM RENDER
     return <div className="n-canvas-root">
@@ -397,8 +353,6 @@ export const NCanvas: React.FC = () => {
                 <div>{Vector2.toString(mouse_down_position_world)}</div>
                 <div>Mouse Down</div>
                 <div>{mouse_down.toString()}</div>
-                <div>Hit Test Node</div>
-                <div>{node_hit_test_result}</div>
                 <div>Active Item</div>
                 <pre className="text-[0.8em]">{JSON.stringify(active_item, null, 1)}</pre>
             </div>
@@ -417,13 +371,12 @@ export const NCanvas: React.FC = () => {
             <canvas
                 className="n-canvas-canvas rounded-md bg-level-1 w-full h-full select-none"
                 ref={canvas_ref}
-                
+
             />
             {
                 // MARK: Node DOM Render
                 (() => {
                     let node_style = default_node_style(); // TODO: this is a bit dumb to have to call it here and in the canvas rendering code.
-                    let transform = new ViewportTransform(viewport.zoom, viewport.midpoint, screen_size);
                     return nodes.map(node => {
                         const is_active_item = active_item.target_id === node.id;
                         const is_being_dragged = is_active_item && active_item.type === "drag_node";
@@ -438,30 +391,35 @@ export const NCanvas: React.FC = () => {
                             );
                         }
 
-                        const node_title_offset = {x:0, y:node_style.title.height};
+                        const node_screen_position = transform.world_to_screen(node_position_world);
 
-                        const node_screen_position = Vector2.add(
-                            transform.world_to_screen(node_position_world),
-                            node_title_offset
-                        );
-                        
-                        const node_screen_size = Vector2.sub(
-                            transform.scale_only_world_to_screen(node.size),
-                            node_title_offset
-                        );
+                        const node_screen_size = transform.scale_only_world_to_screen(node.size);
 
                         const NodeType = NodeRegistry[node.registered_type];
                         return <NodeType
                             key={node.id}
                             node={node}
                             screen_padding={{
-                                x:node_style.padding,
-                                y:node_style.padding
+                                x: node_style.padding,
+                                y: node_style.padding
                             }}
                             screen_position={node_screen_position}
                             screen_size={node_screen_size}
                             font_scale={viewport.zoom}
                             ref={handel_refs}
+                            onPointerDown={e => {
+                                e.preventDefault();
+                                const canvasRect = canvas_host_ref.current!.getBoundingClientRect();
+                                let x = e.clientX - canvasRect.left;
+                                let y = e.clientY - canvasRect.top;
+                                let event_mouse_position = { x, y };
+                                let event_mouse_position_world = transform.screen_to_world(event_mouse_position)
+                                set_active_item({
+                                    type: "drag_node",
+                                    target_id: node.id,
+                                    mouse_down_coord: event_mouse_position_world
+                                })
+                            }}
                         />
                     })
                 })()

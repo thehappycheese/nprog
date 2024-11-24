@@ -16,7 +16,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ children }) => {
             // className="fixed inset-0 z-50 w-full h-full bg-level-0 bg-opacity-90 flex justify-center items-center"
             className="fixed inset-0 z-50 w-full h-full bg-level-0 bg-opacity-90 flex justify-center items-center"
             open={is_open}
-            // {...(is_open ? { open: true } : {})}
+        // {...(is_open ? { open: true } : {})}
         >
             <div
                 className={`
@@ -30,7 +30,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ children }) => {
                     text-primary-1
                     grid
                     grid-rows-[auto_1fr]
-                    gap-4
+                    gap-3
                 `}
                 onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
             >
