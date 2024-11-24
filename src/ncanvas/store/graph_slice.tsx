@@ -1,10 +1,11 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { GraphNode, GraphEdge } from '../graph_types';
 import { Vector2 } from '../Vector2';
+import helpers from '../helpers';
 
 
 export interface GraphState {
-    nodes: Array<GraphNode>;
+    nodes: Array<GraphNode<unknown>>;
     edges: Array<GraphEdge>;
     selected: Array<SelectionItem>
 }
@@ -14,39 +15,72 @@ export interface SelectionItem {
     id: string,
 }
 
-const initialState: GraphState = {
+let sequence = helpers.sequence_maker();
+
+const initial_state: GraphState = {
     nodes: [
         {
             id: "node-0",
             title: "Tau",
             position: { x: 50, y: 50 },
             registered_type: "tau",
+            data: null,
         },
-
         {
             id: "node-1",
-            title: "Output",
-            position: { x: 250, y: 130 },
-            registered_type: "output"
+            title: "Value",
+            position: { x: 50, y: -150 },
+            registered_type: "value",
+            data: 0,
         },
         {
             id: "node-2",
+            title: "Output",
+            position: { x: 250, y: 130 },
+            registered_type: "output",
+            data: null,
+        },
+        {
+            id: "node-3",
             title: "Add",
             position: { x: 150, y: 230 },
             registered_type: "add",
+            data: null,
         },
 
     ],
     edges: [
         {
-            id: "edge-0",
+            id: `edge-${sequence()}`,
             from: {
                 node: "node-0",
-                handel: "H1",
+                handel: "R0",
             },
             to: {
+                node: "node-3",
+                handel: "L0"
+            }
+        },
+        {
+            id: `edge-${sequence()}`,
+            from: {
                 node: "node-1",
-                handel: "H1"
+                handel: "R0",
+            },
+            to: {
+                node: "node-3",
+                handel: "L1"
+            }
+        },
+        {
+            id: `edge-${sequence()}`,
+            from: {
+                node: "node-3",
+                handel: "R0",
+            },
+            to: {
+                node: "node-2",
+                handel: "L0"
             }
         }
     ],
@@ -55,9 +89,9 @@ const initialState: GraphState = {
 
 const graph_slice = createSlice({
     name: 'graph',
-    initialState,
+    initialState: initial_state,
     reducers: {
-        add_node: (state, action: PayloadAction<GraphNode>) => {
+        add_node: (state, action: PayloadAction<GraphNode<unknown>>) => {
             state.nodes.push(action.payload);
         },
         add_edge: (state, action: PayloadAction<GraphEdge>) => {
@@ -83,6 +117,9 @@ const graph_slice = createSlice({
             state.nodes = []
             state.edges = []
             state.selected = []
+        },
+        set_node_data: (state, action: PayloadAction<{ node_id: string, new_value: unknown }>) => {
+            state.nodes.filter(node => node.id == action.payload.node_id).map(item => item.data = action.payload.new_value);
         }
     },
 });

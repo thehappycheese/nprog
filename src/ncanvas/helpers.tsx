@@ -16,6 +16,15 @@ const mouse_positions: (
     return { mouse_position, mouse_position_world };
 }
 
+export const sequence_maker = () => {
+    let counter = -1;
+    return () => {
+        counter += 1;
+        return counter;
+    };
+};
+
 export default {
-    mouse_positions
+    mouse_positions,
+    sequence_maker
 }

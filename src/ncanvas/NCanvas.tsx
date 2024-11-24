@@ -196,6 +196,7 @@ export const NCanvas: React.FC = () => {
     }, [set_dirty_counter]);
 
     // MARK: CANVAS RENDER
+    // TODO: consider switching back to useLayoutEffect
     if (canvas_ref.current) {
         const canvas = canvas_ref.current;
         const ctx = canvas.getContext("2d")!;
@@ -223,6 +224,10 @@ export const NCanvas: React.FC = () => {
             ) => {
                 let host_rect = host.getBoundingClientRect();
                 let handel_rect = handel_refs?.[handel_reference.node]?.[handel_reference.handel]?.getBoundingClientRect();
+                if (!handel_rect) {
+                    console.error(`Invalid Handle Reference: ${JSON.stringify(handel_reference)}`)
+                    return { x: 0, y: 0 };
+                }
                 let handel_position: Vector2.Vector2 = {
                     x: handel_rect.left + handel_rect.width / 2 - host_rect.left,
                     y: handel_rect.top + handel_rect.height / 2 - host_rect.top,
@@ -293,11 +298,12 @@ export const NCanvas: React.FC = () => {
             <button className="btn btn-accent" onClick={() => dispatch(ActionCreators.undo())}>Undo</button>
             <button className="btn" onClick={() => dispatch(ActionCreators.redo())}>Redo</button>
             <button className="btn" onClick={() => {
-                const newNode: GraphNode = {
+                const newNode: GraphNode<null> = {
                     id: `node-${nodes.length + 1}`,
                     title: 'New Node',
                     position: mouse_position_screen,
                     registered_type: "tau",
+                    data: null
                 }; // Example structure
                 dispatch(actions.graph.add_node(newNode));
             }}>Add Node
@@ -359,16 +365,16 @@ export const NCanvas: React.FC = () => {
                         return <NodeType
                             key={node.id}
                             node={node}
-                            screen_padding={{
-                                x: node_style.padding,
-                                y: node_style.padding
-                            }}
+                            title={node.title}
                             screen_position={node_screen_position}
-
                             font_scale={viewport.zoom}
                             ref={handel_refs}
+                            set_node_data={new_value => dispatch(actions.graph.set_node_data({
+                                node_id: node.id,
+                                new_value
+                            }))}
                             onPointerDown={e => {
-                                e.preventDefault();
+                                //e.preventDefault();
                                 let { mouse_position_world } = helpers.mouse_positions(e, transform, canvas_host_ref.current!);
                                 set_active_item({
                                     type: "drag_node",

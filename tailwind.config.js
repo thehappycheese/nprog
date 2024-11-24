@@ -21,7 +21,7 @@ export default {
                 "level-1": "0.5em 0.5em 0.5em rgba(0,0,0,0.4)",
                 "level-2": "0.3em 0.3em 0.3em rgba(0,0,0,0.4)",
                 "level-3": "0.1em 0.1em 0.1em rgba(0,0,0,0.4)",
-            }
+            },
         },
     },
     plugins: []

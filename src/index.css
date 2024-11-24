@@ -49,3 +49,14 @@ button{
     overflow: hidden;
     user-select: none;
 }
+
+input[type="number"]{
+
+    @apply bg-level-0 text-primary-1 rounded-sm p-1
+
+}
+
+input[type="number"]::-webkit-outer-spin-button{
+    display: none;
+
+}

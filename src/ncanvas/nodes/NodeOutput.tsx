@@ -1,17 +1,20 @@
 import { ForwardedRef, forwardRef } from "react";
 import { NodeProps } from "../graph_types.tsx";
-import { Handle, NodeBody } from "./basics.tsx";
-import { assignHandelRef } from "./assignHandelRef.tsx";
+import { NodeBody } from "./core/NodeBody.tsx";
+import { Handle } from "./core/Handel.tsx";
+import { assignHandelRef } from "./core/_helpers.tsx";
 
 
 export const NodeOutput = forwardRef(
     (
-        props: NodeProps,
+        props: NodeProps<null>,
         ref: ForwardedRef<Record<string, Record<string, HTMLDivElement>>>
     ) => {
 
         return <NodeBody
-            {...props}
+            title={props.node.title}
+            screen_position={props.screen_position}
+            font_scale={props.font_scale}
         >
             <div
                 className="grid grid-cols-[auto_1fr_auto] gap-3 pt-2 pb-2 ml-[-2px] mr-[-2px]"
@@ -19,7 +22,7 @@ export const NodeOutput = forwardRef(
                 <div className="relative">
                     <Handle
                         background_color="white"
-                        ref={assignHandelRef(ref, props.node.id, "H1")}
+                        ref={assignHandelRef(ref, props.node.id, "L0")}
                     /></div>
                 <div className="text-start">Output</div>
                 <div className="relative"></div>

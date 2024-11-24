@@ -1,12 +1,14 @@
 import { ForwardedRef, forwardRef } from "react";
 import { NodeProps } from "../graph_types.tsx";
-import { Handle, NodeBody, NodeBodyRow } from "./basics.tsx";
-import { assignHandelRef } from "./assignHandelRef.tsx";
+import { NodeBody } from "./core/NodeBody.tsx";
+import { Handle } from "./core/Handel.tsx";
+import { NodeBodyRow } from "./core/NodeBodyRow.tsx";
+import { assignHandelRef } from "./core/_helpers.tsx";
 
 
-export const NodeValue = forwardRef(
+export const NodeAdd = forwardRef(
     (
-        props: NodeProps,
+        props: NodeProps<null>,
         ref: ForwardedRef<Record<string, Record<string, HTMLDivElement>>>
     ) => {
 
@@ -16,16 +18,23 @@ export const NodeValue = forwardRef(
             <NodeBodyRow
                 handel_left={<Handle
                     background_color="white"
+                    ref={assignHandelRef(ref, props.node.id, "L0")}
+                />}
+            >
+                Value
+            </NodeBodyRow>
+            <NodeBodyRow
+                handel_left={<Handle
+                    background_color="white"
                     ref={assignHandelRef(ref, props.node.id, "L1")}
                 />}
             >
-                <input type="number" />
+                Value
             </NodeBodyRow>
-
             <NodeBodyRow
                 handel_right={<Handle
                     background_color="white"
-                    ref={assignHandelRef(ref, props.node.id, "R1")}
+                    ref={assignHandelRef(ref, props.node.id, "R0")}
                 />}
             >
                 Output
