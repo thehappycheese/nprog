@@ -50,9 +50,15 @@ button{
     user-select: none;
 }
 
-input[type="number"]{
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
 
-    @apply bg-level-0 text-primary-1 rounded-sm p-1
+input[type="number"]{
+    -moz-appearance: textfield;
+    @apply bg-level-0 text-primary-1 rounded-[0.2em] p-[0.1em_0.2em]
 
 }
 

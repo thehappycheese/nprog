@@ -21,6 +21,7 @@ export const NodeValue = forwardRef(
                     ref={assignHandelRef(ref, props.node.id, "R0")}
                 />}>
                 <input type="number"
+                    size={10}
                     onPointerDown={e => e.stopPropagation()}
                     value={props.node.data}
                     onChange={e => props.set_node_data && props.set_node_data(parseFloat(e.target.value))}

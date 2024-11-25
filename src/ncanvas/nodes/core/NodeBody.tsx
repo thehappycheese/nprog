@@ -25,7 +25,7 @@ export const NodeBody = (props: LocalNodeBodyProps) => {
         className="absolute top-0 left-0 box-border rounded-md border-[2px] border-level-2 bg-level-1"
         {...props}
     >
-        <div className="text-sm p-[0.1em] ps-1 pe-1 bg-brand-accent rounded-t-[3px]">{props.title}</div>
+        <div className="text-sm p-[0.1rem] ps-1 pe-1 bg-brand-accent rounded-t-[3px]">{props.title}</div>
         <div className="">
             {props.children}
         </div>
