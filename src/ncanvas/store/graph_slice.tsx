@@ -84,7 +84,7 @@ const initial_state: GraphState = {
             }
         }
     ],
-    selected: []
+    selected: [{ type: "node", id: "node-0" }]
 };
 
 const graph_slice = createSlice({

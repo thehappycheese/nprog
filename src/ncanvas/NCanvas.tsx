@@ -50,6 +50,7 @@ export const NCanvas: React.FC = () => {
     }));
     const nodes = useSelector((state: RootState) => state.graph.present.nodes);
     const edges = useSelector((state: RootState) => state.graph.present.edges);
+    const selection = useSelector((state: RootState) => state.graph.present.selected);
     const viewport = useSelector((state: RootState) => state.viewport);
 
     // MARK: LOCAL STATE
@@ -366,6 +367,7 @@ export const NCanvas: React.FC = () => {
                             key={node.id}
                             node={node}
                             title={node.title}
+                            selected={selection.findIndex(item => item.type === "node" && item.id === node.id) !== -1}
                             screen_position={node_screen_position}
                             font_scale={viewport.zoom}
                             ref={handel_refs}
