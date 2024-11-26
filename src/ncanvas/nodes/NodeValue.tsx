@@ -13,17 +13,20 @@ export const NodeValue = forwardRef(
     ) => {
 
         return <NodeBody
-            {...props}
+            {...props.body_props}
         >
             <NodeBodyRow
                 handel_right={<Handle
                     background_color="white"
+                    handel_reference={{ node_id: props.node.id, handel_id: "R0" }}
+                    onPointerDown={props.onPointerDownHandel}
+                    onPointerUp={props.onPointerUpHandel}
                     ref={assignHandelRef(ref, props.node.id, "R0")}
                 />}>
                 <input type="number"
                     size={10}
-                    onPointerDown={e => e.stopPropagation()}
                     value={props.node.data}
+                    onPointerDown={e => e.stopPropagation()}
                     onChange={e => props.set_node_data && props.set_node_data(parseFloat(e.target.value))}
                 />
             </NodeBodyRow>

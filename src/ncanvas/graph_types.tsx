@@ -4,6 +4,7 @@ import { NodeTau } from "./nodes/NodeTau";
 import { NodeValue } from "./nodes/NodeValue";
 import { Vector2 } from "./Vector2";
 import { NodeBodyProps } from "./nodes/core/NodeBody";
+import { PointerHandelHandler } from "./nodes/core/Handel";
 
 
 export interface Handle {
@@ -20,8 +21,8 @@ export interface GraphNode<T> {
 }
 
 export interface HandelReference {
-    node: string,
-    handel: string
+    node_id: string,
+    handel_id: string
 }
 
 export interface GraphEdge {
@@ -32,16 +33,14 @@ export interface GraphEdge {
 
 export type NodeProps<T> = {
     node: GraphNode<T>;
+    body_props: Omit<NodeBodyProps<T>, "children">;
+    onPointerDownHandel: PointerHandelHandler;
+    onPointerUpHandel: PointerHandelHandler;
 } & (T extends null | undefined ? {} : {
     set_node_data?: (new_value: T) => void
-}) & NodeBodyProps;
+});
 
 export type RegisteredNodeType = "tau" | "output" | "add" | "value";
-
-
-
-
-
 
 export const NodeRegistry: Record<
     RegisteredNodeType,

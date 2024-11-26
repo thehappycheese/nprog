@@ -16,10 +16,8 @@ import helpers from "./helpers";
 // MARK: type ActiveItem
 type ActiveItem = {
     type: "none",
-    target_id: null,
 } | {
     type: "drag_canvas",
-    target_id: null,
 } | {
     type: "hover_edge",
     target_id: string
@@ -31,6 +29,9 @@ type ActiveItem = {
     type: "drag_edge",
     target_id: string,
     mouse_down_coord: Vector2.Vector2,
+} | {
+    type: "handel_out_left",
+    source: HandelReference
 };
 
 
@@ -64,7 +65,7 @@ export const NCanvas: React.FC = () => {
 
     const [mouse_tool_mode, set_mouse_tool_mode] = useState<MouseToolMode>({ type: "select" });
 
-    const [active_item, set_active_item] = useState<ActiveItem>({ type: "none", target_id: null });
+    const [active_item, set_active_item] = useState<ActiveItem>({ type: "none" });
 
     const [grid_spacing, set_grid_spacing] = useConstrainedNumber(50, [5, 1000]);
 
@@ -104,10 +105,7 @@ export const NCanvas: React.FC = () => {
             set_mouse_down_position_screen(mouse_position);
             set_mouse_down_position_world(mouse_position_world);
             if (e.target === canvas_ref.current) {
-                set_active_item({
-                    type: "drag_canvas",
-                    target_id: null
-                })
+                set_active_item({ type: "drag_canvas" });
             }
         } else if (e.type === "pointerup") {
             // MARK: >> pointer up
@@ -117,25 +115,16 @@ export const NCanvas: React.FC = () => {
                     id: active_item.target_id,
                     offset: Vector2.sub(mouse_position_world, active_item.mouse_down_coord)
                 }))
-                set_active_item({ type: "none", target_id: null });
+                set_active_item({ type: "none" });
             } else if (active_item.type === "drag_canvas") {
-                dispatch(actions.viewport.translate(offset_screen))
-                set_active_item({
-                    type: "none",
-                    target_id: null,
-                })
+                dispatch(actions.viewport.translate(offset_screen));
+                set_active_item({ type: "none" });
             } else {
-                set_active_item({
-                    type: "none",
-                    target_id: null,
-                })
+                set_active_item({ type: "none" });
             }
         } else if (e.type === "pointerout") {
             if (e.target === e.currentTarget) {
-                set_active_item({
-                    type: "none",
-                    target_id: null,
-                })
+                set_active_item({ type: "none" });
             }
         } else if (e.type === "pointerover") {
             // TODO: pointer over
@@ -211,7 +200,8 @@ export const NCanvas: React.FC = () => {
                 grid_spacing,
                 color: "rgb(32, 28, 32)",
                 line_width: 1,
-                minimum_spacing_px: 20
+                minimum_spacing_px: 20,
+                show_origin_gizmo: false,
             }
         )
 
@@ -224,7 +214,7 @@ export const NCanvas: React.FC = () => {
                 host: HTMLDivElement
             ) => {
                 let host_rect = host.getBoundingClientRect();
-                let handel_rect = handel_refs?.[handel_reference.node]?.[handel_reference.handel]?.getBoundingClientRect();
+                let handel_rect = handel_refs?.[handel_reference.node_id]?.[handel_reference.handel_id]?.getBoundingClientRect();
                 if (!handel_rect) {
                     console.error(`Invalid Handle Reference: ${JSON.stringify(handel_reference)}`)
                     return { x: 0, y: 0 };
@@ -254,6 +244,25 @@ export const NCanvas: React.FC = () => {
                 );
                 ctx.stroke()
             }
+
+            if (active_item.type === "handel_out_left") {
+                let a = get_handel_position(active_item.source, handel_refs.current, canvas_host_ref.current);
+                let b = mouse_position_screen
+                let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
+                let c1 = Vector2.add(a, abx);
+                let c2 = Vector2.sub(b, abx);
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 3;
+
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.bezierCurveTo(
+                    c1.x, c1.y,
+                    c2.x, c2.y,
+                    b.x, b.y
+                );
+                ctx.stroke()
+            }
         }
     }
 
@@ -261,8 +270,7 @@ export const NCanvas: React.FC = () => {
     return <div className="n-canvas-root">
         <div className="n-canvas-controls">
             <div style={{ display: "none" }}>{dirty_counter}</div>
-            <SettingsMenu isOpen={false} onClose={() => {
-            }}>
+            <SettingsMenu isOpen={false} onClose={() => { }}>
                 <div className="grid grid-cols-1 gap-2 p-5">
                     <button onClick={() => dispatch(ActionCreators.clearHistory())}>Clear Undo History</button>
                     <div className="grid grid-cols-2 gap-x-2 ml-3">
@@ -326,7 +334,6 @@ export const NCanvas: React.FC = () => {
                 <div>Active Item</div>
                 <pre className="text-[0.8em]">{JSON.stringify(active_item, null, 1)}</pre>
             </div>
-            <div>{nodes.map(item => `<Node:${item.id} ${item.title} ...>`).join("\n")}</div>
         </div>
         <div
             className="n-canvas-canvas-host"
@@ -350,7 +357,7 @@ export const NCanvas: React.FC = () => {
 
                         let node_position_world = node.position;
 
-                        if (active_item.target_id === node.id && active_item.type === "drag_node") {
+                        if (active_item.type === "drag_node" && active_item.target_id === node.id) {
                             node_position_world = Vector2.add(
                                 node.position,
                                 Vector2.sub(
@@ -366,24 +373,49 @@ export const NCanvas: React.FC = () => {
                         return <NodeType
                             key={node.id}
                             node={node}
-                            title={node.title}
-                            selected={selection.findIndex(item => item.type === "node" && item.id === node.id) !== -1}
-                            screen_position={node_screen_position}
-                            font_scale={viewport.zoom}
                             ref={handel_refs}
                             set_node_data={new_value => dispatch(actions.graph.set_node_data({
                                 node_id: node.id,
                                 new_value
                             }))}
-                            onPointerDown={e => {
-                                //e.preventDefault();
-                                let { mouse_position_world } = helpers.mouse_positions(e, transform, canvas_host_ref.current!);
+                            body_props={{
+                                node: node,
+                                font_scale: viewport.zoom,
+                                screen_position: node_screen_position,
+                                selected: selection.findIndex(item => item.type === "node" && item.id === node.id) !== -1,
+                                onPointerDown: e => {
+                                    //e.preventDefault();
+                                    let { mouse_position_world } = helpers.mouse_positions(e, transform, canvas_host_ref.current!);
+                                    set_active_item({
+                                        type: "drag_node",
+                                        target_id: node.id,
+                                        mouse_down_coord: mouse_position_world
+                                    })
+                                }
+                            }}
+                            onPointerDownHandel={(e, handle_reference) => {
+                                e.stopPropagation();
                                 set_active_item({
-                                    type: "drag_node",
-                                    target_id: node.id,
-                                    mouse_down_coord: mouse_position_world
+                                    type: "handel_out_left",
+                                    source: handle_reference
                                 })
                             }}
+                            onPointerUpHandel={(e, handel_reference) => {
+                                if (active_item.type === "handel_out_left") {
+                                    e.stopPropagation()
+                                    set_active_item({ type: "none" });
+                                    if (active_item.source.node_id !== handel_reference.node_id && active_item.source.handel_id !== handel_reference.handel_id) {
+                                        let new_edge = {
+                                            from: active_item.source,
+                                            to: handel_reference,
+                                            id: "TODO", // TODO: make way to generate new edge id
+                                        };
+                                        console.log(new_edge);
+                                        dispatch(actions.graph.add_edge(new_edge))
+                                    }
+                                }
+                            }}
+
                         />
                     })
                 })()

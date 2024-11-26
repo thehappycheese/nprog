@@ -12,11 +12,14 @@ export const NodeTau = forwardRef(
         ref: ForwardedRef<Record<string, Record<string, HTMLDivElement>>>
     ) => {
         return <NodeBody
-            {...props}
+            {...props.body_props}
         >
             <NodeBodyRow
                 handel_right={<Handle
                     background_color="white"
+                    handel_reference={{ node_id: props.node.id, handel_id: "R0" }}
+                    onPointerDown={props.onPointerDownHandel}
+                    onPointerUp={props.onPointerUpHandel}
                     ref={assignHandelRef(ref, props.node.id, "R0")}
                 />}
             >

@@ -53,34 +53,34 @@ const initial_state: GraphState = {
         {
             id: `edge-${sequence()}`,
             from: {
-                node: "node-0",
-                handel: "R0",
+                node_id: "node-0",
+                handel_id: "R0",
             },
             to: {
-                node: "node-3",
-                handel: "L0"
+                node_id: "node-3",
+                handel_id: "L0"
             }
         },
         {
             id: `edge-${sequence()}`,
             from: {
-                node: "node-1",
-                handel: "R0",
+                node_id: "node-1",
+                handel_id: "R0",
             },
             to: {
-                node: "node-3",
-                handel: "L1"
+                node_id: "node-3",
+                handel_id: "L1"
             }
         },
         {
             id: `edge-${sequence()}`,
             from: {
-                node: "node-3",
-                handel: "R0",
+                node_id: "node-3",
+                handel_id: "R0",
             },
             to: {
-                node: "node-2",
-                handel: "L0"
+                node_id: "node-2",
+                handel_id: "L0"
             }
         }
     ],

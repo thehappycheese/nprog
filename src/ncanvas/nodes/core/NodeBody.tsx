@@ -1,23 +1,22 @@
-import { PointerEvent } from "react";
-import { ReactElement } from "react";
+import { PointerEventHandler, ReactElement } from "react";
 import { Vector2 } from "../../Vector2";
 import { NodeBodyRow } from "./NodeBodyRow";
+import { GraphNode } from "../../graph_types";
 
 
-export type NodeBodyProps = {
+export type NodeBodyProps<T> = {
     screen_position: Vector2.Vector2,
     font_scale: number,
-    title: string,
+    node: GraphNode<T>
     selected: boolean,
-    onPointerDown?: (e: PointerEvent<HTMLDivElement>) => void
-}
+    onPointerDown?: PointerEventHandler<HTMLDivElement>
+    children?: NodeBodyChildTypes | NodeBodyChildTypes[]
+};
 
-type NodeBodyChildTypes = ReactElement<any, typeof NodeBodyRow>
-type LocalNodeBodyProps = NodeBodyProps & {
-    children: NodeBodyChildTypes | NodeBodyChildTypes[]
-}
+type NodeBodyChildTypes = ReactElement<any, typeof NodeBodyRow>;
 
-export const NodeBody = (props: LocalNodeBodyProps) => {
+
+export const NodeBody = <T,>(props: NodeBodyProps<T>) => {
     return <div
         style={{
             transform: `translate(${props.screen_position.x}px, ${props.screen_position.y}px)`,
@@ -26,9 +25,10 @@ export const NodeBody = (props: LocalNodeBodyProps) => {
         }}
         className="absolute top-0 left-0 box-border rounded-md border-[2px] border-level-2 bg-level-1"
         onPointerDown={props.onPointerDown}
+        title={props.node.id}
     >
-        <div className="text-sm p-[0.1rem] ps-1 pe-1 bg-brand-accent rounded-t-[3px]">{props.title}</div>
-        <div className="">
+        <div className="text-sm p-[0.1rem] ps-1 pe-1 bg-brand-accent rounded-t-[3px]">{props.node.title}</div>
+        <div className="ml-[-2px] mr-[-2px]">
             {props.children}
         </div>
     </div>;

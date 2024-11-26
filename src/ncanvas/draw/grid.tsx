@@ -5,8 +5,9 @@ export interface GridStyle {
     grid_spacing: number,
     line_width: number,
     color: string,
-    minimum_spacing_px: number
-}
+    minimum_spacing_px: number,
+    show_origin_gizmo: boolean,
+};
 
 export function draw_grid(
     ctx: CanvasRenderingContext2D,
@@ -24,10 +25,10 @@ export function draw_grid(
         initial_screen_spacing = viewport.scalar_world_to_screen(spacing);
     }
 
-    const start_x      = Math.floor(top_left.x / spacing) * spacing;
-    const end_x        = Math.ceil(bottom_right.x / spacing) * spacing;
-    const start_y      = Math.floor(top_left.y / spacing) * spacing;
-    const end_y        = Math.ceil(bottom_right.y / spacing) * spacing;
+    const start_x = Math.floor(top_left.x / spacing) * spacing;
+    const end_x = Math.ceil(bottom_right.x / spacing) * spacing;
+    const start_y = Math.floor(top_left.y / spacing) * spacing;
+    const end_y = Math.ceil(bottom_right.y / spacing) * spacing;
     const grid_lines_x = Math.round((end_x - start_x) / spacing) + 1;
     const grid_lines_y = Math.round((end_y - start_y) / spacing) + 1;
 

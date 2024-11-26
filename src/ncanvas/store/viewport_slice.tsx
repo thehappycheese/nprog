@@ -12,6 +12,46 @@ const initialState: Viewport = {
     zoom: 1
 }
 
+const valid_zoom_levels = [
+    0.3,
+    0.4,
+    0.5,
+    0.7,
+    1,
+    1.5,
+    3,
+    4,
+];
+
+const find_nearest_zoom_level_index = (z: number) => {
+    let sqrt_z = Math.sqrt(z);
+    let nearest = valid_zoom_levels.reduce<{ lowest_diff: number, index_of_lowest_diff: number }>(
+        (acc, cur, i) => {
+            let diff = Math.abs(Math.sqrt(cur) - sqrt_z);
+            if (diff < acc.lowest_diff) {
+                return { lowest_diff: diff, index_of_lowest_diff: i }
+            }
+            return acc
+        }, { lowest_diff: Infinity, index_of_lowest_diff: -1 })
+    return nearest.index_of_lowest_diff
+};
+const increase_zoom = (z: number) => {
+    let current_index = find_nearest_zoom_level_index(z);
+    if (current_index < valid_zoom_levels.length - 1) {
+        return valid_zoom_levels[current_index + 1]
+    } else {
+        return valid_zoom_levels[current_index]
+    }
+}
+const decrease_zoom = (z: number) => {
+    let current_index = find_nearest_zoom_level_index(z);
+    if (current_index > 0) {
+        return valid_zoom_levels[current_index - 1];
+    } else {
+        return valid_zoom_levels[current_index];
+    }
+}
+
 const graph_slice = createSlice({
     name: 'viewport',
     initialState,
@@ -33,7 +73,8 @@ const graph_slice = createSlice({
                 target_screen_position,
                 screen_size,
             } = action.payload;
-            let new_zoom = state.zoom * 1.5;
+            //let new_zoom = state.zoom * 1.5;
+            let new_zoom = increase_zoom(state.zoom);
             return new ViewportTransform(
                 state.zoom,
                 state.midpoint,
@@ -48,7 +89,7 @@ const graph_slice = createSlice({
                 target_screen_position,
                 screen_size,
             } = action.payload;
-            let new_zoom = state.zoom / 1.5;
+            let new_zoom = decrease_zoom(state.zoom);
             return new ViewportTransform(
                 state.zoom,
                 state.midpoint,
