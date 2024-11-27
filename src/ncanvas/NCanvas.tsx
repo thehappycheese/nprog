@@ -12,11 +12,8 @@ import ModalDialog from "./components/ModalDialog.tsx";
 import { useConstrainedNumber } from "./hooks/useConstrainedNumber";
 import { Vector2 } from "./Vector2";
 import helpers from "./helpers";
-import { darkStyles, JsonView } from "react-json-view-lite";
 import 'react-json-view-lite/dist/index.css';
-import { Json } from "./components/JSON.tsx";
-
-console.log(darkStyles)
+import { NJson } from "./components/NJson.tsx";
 
 // MARK: type ActiveItem
 type ActiveItem = {
@@ -361,7 +358,7 @@ export const NCanvas: React.FC = () => {
                 <div className="max-h-[80vh] overflow-y-auto p-3">
                     {Object.entries({ nodes, edges, selection }).map(([key, value]) => <div>
                         <div className="p-1 mt-2 mb-1 rounded-md bg-brand-accent">{key}</div>
-                        <Json key={key} value={value} depth={0} />
+                        <NJson key={key} value={value} depth={0} />
                     </div>)}
                 </div>
             </ModalDialog>

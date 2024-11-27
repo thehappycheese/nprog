@@ -1,5 +1,5 @@
 
-import "./JSON.css";
+import "./NJson.css";
 
 interface RenderType<T> {
     value: T,
@@ -81,7 +81,7 @@ export const JsonInner: React.FC<RenderType<any>> = ({ value, postfix, depth }) 
     </>
 }
 
-export const Json: React.FC<RenderType<any>> = ({ value }) => {
+export const NJson: React.FC<RenderType<any>> = ({ value }) => {
     return <div className="n-json-host">
         {
             <JsonInner value={value} depth={1} />

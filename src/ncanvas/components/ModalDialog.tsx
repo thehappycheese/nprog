@@ -13,9 +13,9 @@ const ModalDialog: React.FC<SettingsMenuProps> = ({ title, children }) => {
         >{title}</button>
         <dialog
             // className="fixed inset-0 z-50 w-full h-full bg-level-0 bg-opacity-90 flex justify-center items-center"
-            className="fixed inset-0 z-50 w-full h-full bg-level-0 bg-opacity-90 flex justify-center items-center"
+            className="fixed inset-0 z-50 w-full h-full bg-level-0 bg-opacity-90 flex justify-center items-center select-none"
             open={is_open}
-            onClick={e => {
+            onPointerUp={e => {
                 if (e.currentTarget === e.target) {
                     set_is_open(false)
                 }
@@ -33,6 +33,7 @@ const ModalDialog: React.FC<SettingsMenuProps> = ({ title, children }) => {
                     text-primary-1
                     grid
                     grid-rows-[auto_1fr]
+                    select-text
                 `}
                 onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
             >
