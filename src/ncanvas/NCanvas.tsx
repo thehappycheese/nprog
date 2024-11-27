@@ -1,17 +1,22 @@
 import { useCallback, useRef, useState } from "react";
-import { GraphNode, HandelReference, NodeRegistry } from "./graph_types";
+import { GraphNode, NodeRegistry } from "./graph_types.ts";
+import { HandelReference, HandelReference_compare } from "./graph_types.ts/HandelReference.ts";
 import { useDispatch, useSelector } from "react-redux";
 import { actions, RootState } from "./store";
 import { ActionCreators } from "redux-undo";
 
 import { MouseToolMode, MouseToolModeControls } from "./components/MouseToolModeControls";
-import { default_node_style } from "./draw/NodeRenderStyle";
 import { draw_grid } from "./draw/grid";
 import { ViewportTransform } from "./ViewportTransform";
-import SettingsMenu from "./components/SettingsMenu";
+import ModalDialog from "./components/ModalDialog.tsx";
 import { useConstrainedNumber } from "./hooks/useConstrainedNumber";
 import { Vector2 } from "./Vector2";
 import helpers from "./helpers";
+import { darkStyles, JsonView } from "react-json-view-lite";
+import 'react-json-view-lite/dist/index.css';
+import { Json } from "./components/JSON.tsx";
+
+console.log(darkStyles)
 
 // MARK: type ActiveItem
 type ActiveItem = {
@@ -32,6 +37,12 @@ type ActiveItem = {
 } | {
     type: "handel_out_left",
     source: HandelReference
+} | {
+    type: "handel_grab_start",
+    start_of_edge_id: string
+} | {
+    type: "handel_grab_end",
+    end_of_edge_id: string
 };
 
 
@@ -42,6 +53,15 @@ export const NCanvas: React.FC = () => {
     const resize_observer_ref = useRef<ResizeObserver | null>(null);
 
     const handel_refs = useRef<Record<string, Record<string, HTMLDivElement>>>({})
+
+    // MARK: DERIVED FROM REFS
+
+    const screen_size: Vector2.Vector2 = (
+        canvas_ref.current
+            ? { x: canvas_ref.current.width, y: canvas_ref.current.height }
+            : { x: 1, y: 1 }
+    );
+
     // MARK: REDUX STATE
     const dispatch = useDispatch();
     const undo_history = useSelector((state: RootState) => ({
@@ -70,11 +90,7 @@ export const NCanvas: React.FC = () => {
     const [grid_spacing, set_grid_spacing] = useConstrainedNumber(50, [5, 1000]);
 
 
-    const screen_size: Vector2.Vector2 = (
-        canvas_ref.current
-            ? { x: canvas_ref.current.width, y: canvas_ref.current.height }
-            : { x: 1, y: 1 }
-    );
+    // MARK: DERIVED LOCAL STATE
 
     const offset_screen = Vector2.sub(mouse_position_screen, mouse_down_position_screen);
     //const offset_world = Vector2.scale(offset_screen, viewport.zoom);
@@ -229,6 +245,13 @@ export const NCanvas: React.FC = () => {
             for (let edge of edges) {
                 let a = get_handel_position(edge.from, handel_refs.current, canvas_host_ref.current);
                 let b = get_handel_position(edge.to, handel_refs.current, canvas_host_ref.current);
+
+                if (active_item.type === "handel_grab_start" && active_item.start_of_edge_id === edge.id) {
+                    a = mouse_position_screen;
+                } else if (active_item.type === "handel_grab_end" && active_item.end_of_edge_id === edge.id) {
+                    b = mouse_position_screen;
+                }
+
                 let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
                 let c1 = Vector2.add(a, abx);
                 let c2 = Vector2.sub(b, abx);
@@ -270,7 +293,7 @@ export const NCanvas: React.FC = () => {
     return <div className="n-canvas-root">
         <div className="n-canvas-controls">
             <div style={{ display: "none" }}>{dirty_counter}</div>
-            <SettingsMenu isOpen={false} onClose={() => { }}>
+            <ModalDialog title="Settings">
                 <div className="grid grid-cols-1 gap-2 p-5">
                     <button onClick={() => dispatch(ActionCreators.clearHistory())}>Clear Undo History</button>
                     <div className="grid grid-cols-2 gap-x-2 ml-3">
@@ -303,7 +326,7 @@ export const NCanvas: React.FC = () => {
                             className="bg-level-0" />
                     </div>
                 </div>
-            </SettingsMenu>
+            </ModalDialog>
             <button className="btn btn-accent" onClick={() => dispatch(ActionCreators.undo())}>Undo</button>
             <button className="btn" onClick={() => dispatch(ActionCreators.redo())}>Redo</button>
             <button className="btn" onClick={() => {
@@ -334,6 +357,14 @@ export const NCanvas: React.FC = () => {
                 <div>Active Item</div>
                 <pre className="text-[0.8em]">{JSON.stringify(active_item, null, 1)}</pre>
             </div>
+            <ModalDialog title="View Data">
+                <div className="max-h-[80vh] overflow-y-auto p-3">
+                    {Object.entries({ nodes, edges, selection }).map(([key, value]) => <div>
+                        <div className="p-1 mt-2 mb-1 rounded-md bg-brand-accent">{key}</div>
+                        <Json key={key} value={value} depth={0} />
+                    </div>)}
+                </div>
+            </ModalDialog>
         </div>
         <div
             className="n-canvas-canvas-host"
@@ -352,7 +383,6 @@ export const NCanvas: React.FC = () => {
             {
                 // MARK: Node DOM Render
                 (() => {
-                    let node_style = default_node_style(); // TODO: this is a bit dumb to have to call it here and in the canvas rendering code.
                     return nodes.map(node => {
 
                         let node_position_world = node.position;
@@ -384,6 +414,7 @@ export const NCanvas: React.FC = () => {
                                 screen_position: node_screen_position,
                                 selected: selection.findIndex(item => item.type === "node" && item.id === node.id) !== -1,
                                 onPointerDown: e => {
+                                    // MARK: Body pointer Down
                                     //e.preventDefault();
                                     let { mouse_position_world } = helpers.mouse_positions(e, transform, canvas_host_ref.current!);
                                     set_active_item({
@@ -393,15 +424,33 @@ export const NCanvas: React.FC = () => {
                                     })
                                 }
                             }}
-                            onPointerDownHandel={(e, handle_reference) => {
+                            onPointerDownHandel={(e, handel_reference) => {
+                                // MARK: Handle Pointer Down
                                 e.stopPropagation();
-                                set_active_item({
-                                    type: "handel_out_left",
-                                    source: handle_reference
-                                })
+                                if (active_item.type === "none" && handel_reference.handel_type === "output") {
+                                    if (e.ctrlKey) {
+                                        let user_grabbed_edge_start = edges.find(item => HandelReference_compare(item.from, handel_reference));
+                                        // USER must hold control to be allowed to move the start of an edge
+                                        if (user_grabbed_edge_start) {
+                                            set_active_item({
+                                                type: "handel_grab_start",
+                                                start_of_edge_id: user_grabbed_edge_start.id
+                                            });
+                                        }
+                                    } else {
+                                        // TODO: disconnect existing?
+                                        // TODO: handel release over none
+                                        set_active_item({
+                                            type: "handel_out_left",
+                                            source: handel_reference
+                                        })
+                                    }
+                                }
                             }}
+
                             onPointerUpHandel={(e, handel_reference) => {
-                                if (active_item.type === "handel_out_left") {
+                                // MARK: Handle Pointer Up
+                                if (active_item.type === "handel_out_left" && handel_reference.handel_type == "input") {
                                     e.stopPropagation()
                                     set_active_item({ type: "none" });
                                     if (active_item.source.node_id !== handel_reference.node_id && active_item.source.handel_id !== handel_reference.handel_id) {

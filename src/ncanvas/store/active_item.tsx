@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import { Vector2 } from '../Vector2';
 
 type ActiveItem = {
@@ -29,7 +29,7 @@ const active_item_slice = createSlice({
     name: 'active_item',
     initialState: initial_state,
     reducers: {
-        mouse_down_node: (state) => {
+        mouse_down_node: (_state) => {
             return {
                 type: "none",
                 target_id: null,

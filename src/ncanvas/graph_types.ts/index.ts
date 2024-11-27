@@ -1,16 +1,12 @@
-import { NodeAdd } from "./nodes/NodeAdd";
-import { NodeOutput } from "./nodes/NodeOutput";
-import { NodeTau } from "./nodes/NodeTau";
-import { NodeValue } from "./nodes/NodeValue";
-import { Vector2 } from "./Vector2";
-import { NodeBodyProps } from "./nodes/core/NodeBody";
-import { PointerHandelHandler } from "./nodes/core/Handel";
+import { NodeAdd } from "../nodes/NodeAdd";
+import { NodeOutput } from "../nodes/NodeOutput";
+import { NodeTau } from "../nodes/NodeTau";
+import { NodeValue } from "../nodes/NodeValue";
+import { Vector2 } from "../Vector2";
+import { NodeBodyProps } from "../nodes/core/NodeBody";
+import { PointerHandelHandler } from "../nodes/core/Handel";
+import { HandelReference } from "./HandelReference";
 
-
-export interface Handle {
-    id: string;
-    type: 'input' | 'output';
-}
 
 export interface GraphNode<T> {
     id: string;
@@ -18,11 +14,6 @@ export interface GraphNode<T> {
     position: Vector2.Vector2;
     registered_type: RegisteredNodeType;
     data: T
-}
-
-export interface HandelReference {
-    node_id: string,
-    handel_id: string
 }
 
 export interface GraphEdge {

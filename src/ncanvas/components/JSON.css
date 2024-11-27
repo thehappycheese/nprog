@@ -1,0 +1,42 @@
+
+.n-json-host{
+    font-family: monospace;
+}
+.n-json-paren {
+    color:rgb(128, 122, 88);
+}
+.n-json-delim {
+    color:green;
+}
+
+.n-json-object-key {
+    font-weight: bold;
+    color: rgb(189, 95, 72);
+    display:inline-block;
+}
+.n-json-number {
+    color: rgb(193, 151, 235);
+}
+.n-json-string {
+    color: skyblue
+}
+.n-json-null {
+    color:rgb(165, 161, 161);
+}
+
+
+.n-json-depth-1 {
+    margin-left:1em;
+}
+.n-json-depth-2 {
+    margin-left:2em;
+}
+.n-json-depth-3 {
+    margin-left:3em;
+}
+.n-json-depth-4 {
+    margin-left:4em;
+}
+.n-json-depth-5 {
+    margin-left:4em;
+}

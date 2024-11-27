@@ -1,22 +1,25 @@
 import React, { useState } from "react";
 
 interface SettingsMenuProps {
-    isOpen: boolean;
-    onClose: () => void;
+    title: string;
     children: React.ReactNode;
 }
 
-const SettingsMenu: React.FC<SettingsMenuProps> = ({ children }) => {
+const ModalDialog: React.FC<SettingsMenuProps> = ({ title, children }) => {
     let [is_open, set_is_open] = useState(false);
     return <>
         <button
             onClick={() => set_is_open(!is_open)}
-        >Settings</button>
+        >{title}</button>
         <dialog
             // className="fixed inset-0 z-50 w-full h-full bg-level-0 bg-opacity-90 flex justify-center items-center"
             className="fixed inset-0 z-50 w-full h-full bg-level-0 bg-opacity-90 flex justify-center items-center"
             open={is_open}
-        // {...(is_open ? { open: true } : {})}
+            onClick={e => {
+                if (e.currentTarget === e.target) {
+                    set_is_open(false)
+                }
+            }}
         >
             <div
                 className={`
@@ -30,14 +33,14 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ children }) => {
                     text-primary-1
                     grid
                     grid-rows-[auto_1fr]
-                    gap-3
                 `}
                 onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
             >
-                <div className="bg-brand-accent p-3 text-lg">
-                    Settings
+                <div className="bg-brand-accent text-lg grid grid-cols-[1fr_2em]">
+                    <div
+                        className="align-center p-1"
+                    >{title}</div>
                     <button
-                        className="absolute top-0 right-0 p-2 bg-none"
                         aria-label="Close Settings"
                         onClick={() => set_is_open(false)}
                     >
@@ -50,4 +53,4 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ children }) => {
     </>;
 };
 
-export default SettingsMenu;
+export default ModalDialog;

@@ -7,44 +7,51 @@ dialog:not([open]) {
 }
 
 :root {
-  font-family: sans-serif;
-  color:white;
-  height:100vh;
-  margin:0;
-  padding:0;
+    font-family: sans-serif;
+    color: white;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
 }
 
-#root{
-    height:100%;
+#root {
+    height: 100%;
 }
 
 body {
-    margin:0;
-    padding:0.8em;
+    margin: 0;
+    padding: 0.8em;
     min-width: 320px;
     height: 100%;
     @apply bg-level-0;
 }
-button{
+
+button {
     @apply bg-brand-accent rounded-lg p-1;
 }
 
-.n-canvas-root{
-    display:flex;
-    height:100%;
-    gap:1em;
+button:hover {
+    background-color: rgb(189, 75, 75);
 }
-.n-canvas-controls{
-    width:20em;
-    display:flex;
+
+.n-canvas-root {
+    display: flex;
+    height: 100%;
+    gap: 1em;
+}
+
+.n-canvas-controls {
+    width: 20em;
+    display: flex;
     flex-direction: column;
-    gap:0.5em;
+    gap: 0.5em;
     overflow-y: auto;
 }
+
 .n-canvas-canvas-host {
-    height:100%;
-    width:100%;
-    position:relative;
+    height: 100%;
+    width: 100%;
+    position: relative;
     flex-grow: 1;
     overflow: hidden;
     user-select: none;
@@ -56,13 +63,12 @@ input::-webkit-inner-spin-button {
     margin: 0;
 }
 
-input[type="number"]{
+input[type="number"] {
     -moz-appearance: textfield;
     @apply bg-level-0 text-primary-1 rounded-[0.2em] p-[0.1em_0.2em]
-
 }
 
-input[type="number"]::-webkit-outer-spin-button{
+input[type="number"]::-webkit-outer-spin-button {
     display: none;
 
 }
