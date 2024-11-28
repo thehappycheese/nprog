@@ -12,7 +12,6 @@ import ModalDialog from "./components/ModalDialog.tsx";
 import { useConstrainedNumber } from "./hooks/useConstrainedNumber";
 import { Vector2 } from "./Vector2";
 import helpers from "./helpers";
-import 'react-json-view-lite/dist/index.css';
 import { NJson } from "./components/NJson.tsx";
 
 // MARK: type ActiveItem
