@@ -1,18 +1,18 @@
 import { forwardRef, ForwardedRef, PointerEvent } from "react";
-import { HandelReference } from "../../graph_types.ts/HandelReference.ts";
+import { HandelReference, HandelType } from "../../graph_types.ts/HandelReference.ts";
 
-export type PointerHandelHandler = (e: PointerEvent<HTMLDivElement>, handel_reference: HandelReference) => void;
+export type PointerHandelHandler = (e: PointerEvent<HTMLDivElement>, handel_reference: HandelReference, handel_type: HandelType) => void;
 
 export const Handle = forwardRef((props: {
     background_color: string;
+    handel_type: HandelType,
     handel_reference: HandelReference;
     onPointerDown: PointerHandelHandler;
     onPointerUp: PointerHandelHandler;
-    tall?: boolean;
 }, ref: ForwardedRef<HTMLDivElement>) => {
     let hit_box_padding = 0.4;
     let width = 0.8;
-    let height = width * (props.tall ? 2.5 : 1);
+    let height = 0.8;
     return <div
         ref={ref}
         style={{
@@ -25,10 +25,10 @@ export const Handle = forwardRef((props: {
         }}
         className="absolute group"
         onPointerDown={e => {
-            props.onPointerDown(e, props.handel_reference)
+            props.onPointerDown(e, props.handel_reference, props.handel_type);
         }}
         onPointerUp={e => {
-            props.onPointerUp(e, props.handel_reference)
+            props.onPointerUp(e, props.handel_reference, props.handel_type);
         }}
     >
         <div

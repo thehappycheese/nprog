@@ -27,30 +27,35 @@ export namespace Vector2 {
     export function left(a: Vector2): Vector2 {
         return { x: -a.y, y: a.x };
     }
-    export function unit(a:Vector2):Vector2{
-        const mag = Math.sqrt(a.x*a.x + a.y*a.y);
+    export function unit(a: Vector2): Vector2 {
+        const mag = Math.sqrt(a.x * a.x + a.y * a.y);
         return {
-            x:a.x/mag,
-            y:a.y/mag,
+            x: a.x / mag,
+            y: a.y / mag,
         }
     }
 
 
-    export function mag_squared(a:Vector2):number{
-        return Math.sqrt(a.x*a.x + a.y*a.y);
+    export function mag_squared(a: Vector2): number {
+        return Math.sqrt(a.x * a.x + a.y * a.y);
     }
 
-    export function sum(items:Vector2[]){
-        return items.reduce((cur, acc)=>({x:cur.x+acc.x, y:cur.y+cur.y}));
+    export const lerp = (a: Vector2, b: Vector2, t: number): Vector2 => ({
+        x: a.x + (b.x - a.x) * t,
+        y: a.y + (b.y - a.y) * t,
+    });
+
+    export function sum(items: Vector2[]) {
+        return items.reduce((cur, acc) => ({ x: cur.x + acc.x, y: cur.y + cur.y }));
     }
 
-    export const inside_rect = (test_position:Vector2) => (rect_position:Vector2, rect_size:Vector2) => {
+    export const inside_rect = (test_position: Vector2) => (rect_position: Vector2, rect_size: Vector2) => {
         let relative_test_position = sub(test_position, rect_position);
         return (
-            relative_test_position.x>=0
-            && relative_test_position.y>=0
-            && relative_test_position.x<rect_size.x
-            && relative_test_position.y<rect_size.y
+            relative_test_position.x >= 0
+            && relative_test_position.y >= 0
+            && relative_test_position.x < rect_size.x
+            && relative_test_position.y < rect_size.y
         )
     }
 }

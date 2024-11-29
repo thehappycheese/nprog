@@ -5,7 +5,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { actions, RootState } from "./store";
 import { ActionCreators } from "redux-undo";
 
-import { MouseToolMode, MouseToolModeControls } from "./components/MouseToolModeControls";
 import { draw_grid } from "./draw/grid";
 import { ViewportTransform } from "./ViewportTransform";
 import ModalDialog from "./components/ModalDialog.tsx";
@@ -13,7 +12,9 @@ import { useConstrainedNumber } from "./hooks/useConstrainedNumber";
 import { Vector2 } from "./Vector2";
 import helpers from "./helpers";
 import { NJson } from "./components/NJson.tsx";
-import { Accordion } from "./components/Accordian.tsx";
+import { Accordion } from "./components/Accordion.tsx";
+import { solve_x } from "./bezier/solve_x.tsx";
+import { handel_bezier } from "./bezier/index.tsx";
 
 // MARK: type ActiveItem
 type ActiveItem = {
@@ -79,8 +80,6 @@ export const NCanvas: React.FC = () => {
     const [mouse_down_position_world, set_mouse_down_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down_position_screen, set_mouse_down_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down, set_mouse_down] = useState(false);
-
-    const [mouse_tool_mode, set_mouse_tool_mode] = useState<MouseToolMode>({ type: "select" });
 
     const [active_item, set_active_item] = useState<ActiveItem>({ type: "none" });
 
@@ -221,27 +220,11 @@ export const NCanvas: React.FC = () => {
         // MARK: >> draw edges
         if (canvas_host_ref.current !== null) {
 
-            let get_handel_position = (
-                handel_reference: HandelReference,
-                handel_refs: Record<string, Record<string, HTMLDivElement>>,
-                host: HTMLDivElement
-            ) => {
-                let host_rect = host.getBoundingClientRect();
-                let handel_rect = handel_refs?.[handel_reference.node_id]?.[handel_reference.handel_id]?.getBoundingClientRect();
-                if (!handel_rect) {
-                    console.error(`Invalid Handle Reference: ${JSON.stringify(handel_reference)}`)
-                    return { x: 0, y: 0 };
-                }
-                let handel_position: Vector2.Vector2 = {
-                    x: handel_rect.left + handel_rect.width / 2 - host_rect.left,
-                    y: handel_rect.top + handel_rect.height / 2 - host_rect.top,
-                };
-                return handel_position
-            }
+
 
             for (let edge of edges) {
-                let a = get_handel_position(edge.from, handel_refs.current, canvas_host_ref.current);
-                let b = get_handel_position(edge.to, handel_refs.current, canvas_host_ref.current);
+                let a = helpers.get_handel_position(edge.from, handel_refs.current, canvas_host_ref.current);
+                let b = helpers.get_handel_position(edge.to, handel_refs.current, canvas_host_ref.current);
 
                 if (active_item.type === "handel_grab_start" && active_item.start_of_edge_id === edge.id) {
                     a = mouse_position_screen;
@@ -263,10 +246,20 @@ export const NCanvas: React.FC = () => {
                     b.x, b.y
                 );
                 ctx.stroke()
+                // MARK: temp bez test
+                let partway = handel_bezier(a, b, 0.2);
+                ctx.fillStyle = "black";
+                ctx.fillRect(partway.x - 3, partway.y - 3, 6, 6);
+                let result = solve_x(a.x + 10, t => handel_bezier(a, b, t));
+                if (result) {
+                    ctx.fillStyle = "yellow";
+                    ctx.fillRect(a.x + 10 - 3, result.y - 3, 6, 6);
+                }
+
             }
 
             if (active_item.type === "handel_out_left") {
-                let a = get_handel_position(active_item.source, handel_refs.current, canvas_host_ref.current);
+                let a = helpers.get_handel_position(active_item.source, handel_refs.current, canvas_host_ref.current);
                 let b = mouse_position_screen
                 let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
                 let c1 = Vector2.add(a, abx);
@@ -401,6 +394,7 @@ export const NCanvas: React.FC = () => {
                         const node_screen_position = transform.world_to_screen(node_position_world);
 
                         const NodeType = NodeRegistry[node.registered_type];
+
                         return <NodeType
                             key={node.id}
                             node={node}
@@ -425,17 +419,45 @@ export const NCanvas: React.FC = () => {
                                     })
                                 }
                             }}
-                            onPointerDownHandel={(e, handel_reference) => {
+                            onPointerDownHandel={(e, handel_reference, handel_type) => {
                                 // MARK: Handle Pointer Down
                                 e.stopPropagation();
-                                if (active_item.type === "none" && handel_reference.handel_type === "output") {
-                                    if (e.ctrlKey) {
-                                        let user_grabbed_edge_start = edges.find(item => HandelReference_compare(item.from, handel_reference));
-                                        // USER must hold control to be allowed to move the start of an edge
-                                        if (user_grabbed_edge_start) {
+                                if (active_item.type === "none" && handel_type === "output") {
+                                    if (e.ctrlKey) { // User must hold control key to grab the start of an edge
+                                        let user_grabbed_edges_start = edges.filter(
+                                            item => HandelReference_compare(item.from, handel_reference)
+                                        );
+                                        if (user_grabbed_edges_start.length > 0) {
+                                            // read the position of the edge 20% of the way in, and pick the nearest edge to the mouse
+                                            const edge_from_to = user_grabbed_edges_start
+                                                .map(edge => ({
+                                                    edge_id: edge.id,
+                                                    from: helpers.get_handel_position(edge.from, handel_refs.current, canvas_host_ref.current!),
+                                                    to: helpers.get_handel_position(edge.to, handel_refs.current, canvas_host_ref.current!)
+                                                }));
+                                            const edge_sample_near_click = edge_from_to
+                                                .map(({ edge_id, from, to }) => {
+                                                    let result = solve_x(from.x + 5, t => handel_bezier(from, to, t))
+                                                    if (result && result.t < 0.1) {
+                                                        return { edge_id, partway: { x: from.x, y: result.y } };
+                                                    } else {
+                                                        return { edge_id, partway: { x: from.x, y: handel_bezier(from, to, 0.1).y } };
+                                                    }
+                                                });
+                                            const best_edge = edge_sample_near_click
+                                                .reduce<{ edge_id: string | null, best: number }>(({ edge_id, best }, { edge_id: challenger_edge_id, partway }) => {
+                                                    let challenger = Vector2.mag_squared(Vector2.sub(mouse_position_screen, partway));
+                                                    if (challenger <= best) {
+                                                        return { edge_id: challenger_edge_id, best: challenger }
+                                                    } else {
+                                                        return { edge_id, best }
+                                                    }
+                                                }, { edge_id: null, best: Infinity })
+                                            //debugger
+                                            let user_grabbed_edge_start_id = best_edge.edge_id ?? user_grabbed_edges_start[0].id;
                                             set_active_item({
                                                 type: "handel_grab_start",
-                                                start_of_edge_id: user_grabbed_edge_start.id
+                                                start_of_edge_id: user_grabbed_edge_start_id
                                             });
                                         }
                                     } else {
@@ -449,23 +471,20 @@ export const NCanvas: React.FC = () => {
                                 }
                             }}
 
-                            onPointerUpHandel={(e, handel_reference) => {
+                            onPointerUpHandel={(e, handel_reference, handel_type) => {
                                 // MARK: Handle Pointer Up
-                                if (active_item.type === "handel_out_left" && handel_reference.handel_type == "input") {
+                                if (active_item.type === "handel_out_left" && handel_type === "input") {
                                     e.stopPropagation()
                                     set_active_item({ type: "none" });
                                     if (active_item.source.node_id !== handel_reference.node_id && active_item.source.handel_id !== handel_reference.handel_id) {
                                         let new_edge = {
                                             from: active_item.source,
                                             to: handel_reference,
-                                            id: "TODO", // TODO: make way to generate new edge id
                                         };
-                                        console.log(new_edge);
-                                        dispatch(actions.graph.add_edge(new_edge))
+                                        dispatch(actions.graph.add_edge(new_edge));
                                     }
                                 }
                             }}
-
                         />
                     })
                 })()
@@ -473,3 +492,6 @@ export const NCanvas: React.FC = () => {
         </div>
     </div>
 }
+
+
+

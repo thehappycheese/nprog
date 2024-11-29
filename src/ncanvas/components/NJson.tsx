@@ -55,6 +55,7 @@ const JsonArray: React.FC<RenderType<any[]>> = ({ value, postfix, depth }) => <>
         value.map((value, index) =>
             <div key={index} style={{ marginLeft: `${1}em` }}>
                 <JsonInner
+                    key={index}
                     value={value}
                     postfix={<><span className="n-json-delim">,</span><br /></>}
                     depth={1}
@@ -102,7 +103,7 @@ const JsonObject: React.FC<RenderType<object>> = ({ value, postfix, depth }) => 
                 <div key={index} style={{ marginLeft: `${1}em` }}>
                     <span className="n-json-object-key">{key}</span>
                     <span className="n-json-delim">:&nbsp;</span>
-                    <JsonInner value={value} postfix={<span className="n-json-delim">,</span>} depth={0} />
+                    <JsonInner key={index} value={value} postfix={<span className="n-json-delim">,</span>} depth={0} />
                 </div>
             )
         }
