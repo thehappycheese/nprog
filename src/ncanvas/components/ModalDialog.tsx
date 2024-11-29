@@ -12,7 +12,6 @@ const ModalDialog: React.FC<SettingsMenuProps> = ({ title, children }) => {
             onClick={() => set_is_open(!is_open)}
         >{title}</button>
         <dialog
-            // className="fixed inset-0 z-50 w-full h-full bg-level-0 bg-opacity-90 flex justify-center items-center"
             className="fixed inset-0 z-50 w-full h-full bg-level-0 bg-opacity-90 flex justify-center items-center select-none"
             open={is_open}
             onPointerUp={e => {
@@ -39,7 +38,7 @@ const ModalDialog: React.FC<SettingsMenuProps> = ({ title, children }) => {
             >
                 <div className="bg-brand-accent text-lg grid grid-cols-[1fr_2em]">
                     <div
-                        className="align-center p-1"
+                        className="align-center p-2 select-none"
                     >{title}</div>
                     <button
                         aria-label="Close Settings"

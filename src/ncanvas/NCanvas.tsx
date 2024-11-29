@@ -13,6 +13,7 @@ import { useConstrainedNumber } from "./hooks/useConstrainedNumber";
 import { Vector2 } from "./Vector2";
 import helpers from "./helpers";
 import { NJson } from "./components/NJson.tsx";
+import { Accordion } from "./components/Accordian.tsx";
 
 // MARK: type ActiveItem
 type ActiveItem = {
@@ -338,7 +339,7 @@ export const NCanvas: React.FC = () => {
             </button>
 
             <button onClick={() => dispatch(actions.viewport.reset())}>Reset View</button>
-            <MouseToolModeControls mouse_tool_mode={mouse_tool_mode} set_mouse_tool_mode={set_mouse_tool_mode} />
+
             <div className="grid grid-cols-2 gap-2 text-[0.8em] font-mono">
                 <div>Mouse Screen</div>
                 <div>{Vector2.toString(mouse_position_screen)}</div>
@@ -354,11 +355,15 @@ export const NCanvas: React.FC = () => {
                 <pre className="text-[0.8em]">{JSON.stringify(active_item, null, 1)}</pre>
             </div>
             <ModalDialog title="View Data">
-                <div className="max-h-[80vh] overflow-y-auto p-3">
-                    {Object.entries({ nodes, edges, selection }).map(([key, value]) => <div>
-                        <div className="p-1 mt-2 mb-1 rounded-md bg-brand-accent">{key}</div>
-                        <NJson key={key} value={value} depth={0} />
-                    </div>)}
+                <div className="p-2 h-[80vh] overflow-y-auto">
+                    <Accordion
+                        items={
+                            Object.entries({ nodes, edges, selection })
+                                .map(([key, value]) =>
+                                    ({ title: key, content: <NJson key={key} value={value} depth={0} /> })
+                                )
+                        }
+                    />
                 </div>
             </ModalDialog>
         </div>
