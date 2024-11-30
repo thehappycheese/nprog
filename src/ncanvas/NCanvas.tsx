@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ActionCreators } from "redux-undo";
 import { Accordion } from "./components/Accordion.tsx";
@@ -104,7 +104,20 @@ export const NCanvas: React.FC = () => {
         screen_size
     );
 
-
+    // MARK: GLOBAL EVENTS
+    useEffect(() => {
+        const handle_keydown = (e: KeyboardEvent) => {
+            if (e.key === "z" && e.ctrlKey) {
+                dispatch(ActionCreators.undo())
+            } else if (e.key === "y" && e.ctrlKey) {
+                dispatch(ActionCreators.redo())
+            }
+        }
+        window.addEventListener("keydown", handle_keydown)
+        return () => {
+            window.removeEventListener("keydown", handle_keydown);
+        }
+    }, [])
 
     // MARK: POINTER EVENT
     const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLElement>) => {
@@ -373,7 +386,7 @@ export const NCanvas: React.FC = () => {
             onPointerOut={handle_canvas_pointer_event}
             onPointerOver={handle_canvas_pointer_event}
             onWheel={handle_wheel_event}
-            onContextMenu={e => e.preventDefault()}
+            onContextMenu={e => !e.ctrlKey || e.preventDefault()}
         >
             <canvas
                 className="n-canvas-canvas rounded-md bg-level-1 w-full h-full select-none"
