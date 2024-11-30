@@ -9,6 +9,6 @@ export type NodeProps<T> = {
     body_props: Omit<NodeBodyProps<T>, "children">;
     onPointerDownHandel: PointerHandelHandler;
     onPointerUpHandel: PointerHandelHandler;
-} & (T extends null | undefined ? {} : {
+} & (T extends null | undefined ? object : {
     set_node_data?: (new_value: T) => void;
 });

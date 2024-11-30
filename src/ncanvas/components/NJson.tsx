@@ -49,7 +49,7 @@ const JsonUnknown: React.FC<RenderType<string>> = ({ value, postfix, depth }) =>
         {value}{postfix}
     </span>;
 
-const JsonArray: React.FC<RenderType<any[]>> = ({ value, postfix, depth }) => <>
+const JsonArray: React.FC<RenderType<any[]>> = ({ value, postfix }) => <>
     <span className="n-json-paren">{"["}<br /></span>
     {
         value.map((value, index) =>
@@ -66,7 +66,7 @@ const JsonArray: React.FC<RenderType<any[]>> = ({ value, postfix, depth }) => <>
     <span className="n-json-paren">{"]"}{postfix}</span>
 </>;
 
-const JsonObject: React.FC<RenderType<object>> = ({ value, postfix, depth }) => {
+const JsonObject: React.FC<RenderType<object>> = ({ value, postfix }) => {
     let entries = Object.entries(value).map(
         ([key, value]) => [key, (typeof value === "number") ? short_num_string(value) : value]
     );
@@ -143,7 +143,7 @@ export const JsonInner: React.FC<RenderType<any>> = ({ value, postfix, depth }) 
 }
 
 export const NJson: React.FC<RenderType<any> & { font_size?: number }> = ({ value, font_size: font_size_em = 1 }) => {
-    return <div className="font-mono" style={{ fontSize: `${font_size_em}em` }}>
+    return <div className="font-mono whitespace-nowrap" style={{ fontSize: `${font_size_em}em` }}>
         {
             <JsonInner value={value} depth={1} />
         }

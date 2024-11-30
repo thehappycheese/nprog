@@ -113,6 +113,9 @@ const graph_slice = createSlice({
                 throw new Error("unable to find a new ID for edge. This might happen if you have had more than 1000 nodes in the history of this document. This limit can be removed in source, you should only see this error in debugging.")
             }
         },
+        remove_edges: (state, action: PayloadAction<string[]>) => {
+            state.edges = state.edges.filter(item => !action.payload.includes(item.id))
+        },
         offset_node: (state, action: PayloadAction<{ id: string, offset: Vector2.Vector2 }>) => {
             let node = state.nodes.find(item => item.id == action.payload.id);
             if (node) {

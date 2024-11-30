@@ -14,3 +14,16 @@ export const handel_bezier = (p0: Vector2.Vector2, p3: Vector2.Vector2, t: numbe
 
     return Vector2.lerp(r0, r1, t);
 }
+
+export const handel_bezier_segments = (p0: Vector2.Vector2, p3: Vector2.Vector2, number_of_segments: number = 30): [Vector2.Vector2, Vector2.Vector2][] => {
+    let result: [Vector2.Vector2, Vector2.Vector2][] = [];
+    for (let i = 1; i < number_of_segments; i++) {
+        const t0 = (i - 1) / (number_of_segments - 1);
+        const t1 = i / (number_of_segments - 1);
+        result.push([
+            handel_bezier(p0, p3, t0),
+            handel_bezier(p0, p3, t1),
+        ])
+    }
+    return result
+}

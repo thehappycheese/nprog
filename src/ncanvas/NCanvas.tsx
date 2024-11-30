@@ -1,21 +1,20 @@
 import { useCallback, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ActionCreators } from "redux-undo";
-import { handel_bezier } from "./bezier/index.tsx";
-import { solve_x } from "./bezier/solve_x.tsx";
 import { Accordion } from "./components/Accordion.tsx";
 import ModalDialog from "./components/ModalDialog.tsx";
 import { NJson } from "./components/NJson.tsx";
 import { draw_grid } from "./draw/grid";
 import { grabby_edge } from "./grabby_edge.tsx";
 import { GraphNode } from "./graph_types/GraphNode.ts";
-import { HandelReference } from "./graph_types/HandelReference.ts";
+import { HandelReference, HandelType } from "./graph_types/HandelReference.ts";
 import helpers from "./helpers";
 import { useConstrainedNumber } from "./hooks/useConstrainedNumber";
 import { NodeRegistry } from "./graph_types/RegisteredNodeType.ts";
 import { actions, RootState } from "./store";
 import { Vector2 } from "./Vector2";
 import { ViewportTransform } from "./ViewportTransform";
+import { handel_bezier_segments } from "./bezier/handel_bezier.tsx";
 
 // MARK: type ActiveItem
 type ActiveItem = {
@@ -43,7 +42,8 @@ type ActiveItem = {
     type: "handel_grab_end",
     end_of_edge_id: string
 } | {
-    type: "draw_edge_cut"
+    type: "draw_edge_cut",
+    mouse_down_position_screen: Vector2.Vector2
 };
 
 
@@ -108,17 +108,21 @@ export const NCanvas: React.FC = () => {
 
     // MARK: POINTER EVENT
     const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLElement>) => {
-        let { mouse_position_screen: mouse_position, mouse_position_world } = helpers.get_mouse_positions(e, transform, e.currentTarget);
-        set_mouse_position_screen(mouse_position);
+        let { mouse_position_screen, mouse_position_world } = helpers.get_mouse_positions(e, transform, e.currentTarget);
+        set_mouse_position_screen(mouse_position_screen);
         //set_mouse_position_world(mouse_position_world);
 
         if (e.type === "pointerdown") {
             // MARK: >> pointerdown
             set_mouse_down(true);
-            set_mouse_down_position_screen(mouse_position);
+            set_mouse_down_position_screen(mouse_position_screen);
             set_mouse_down_position_world(mouse_position_world);
             if (e.target === canvas_ref.current) {
-                set_active_item({ type: "drag_canvas" });
+                if (e.button === 1) {
+                    set_active_item({ type: "drag_canvas" });
+                } else if (e.button === 2 && e.ctrlKey) {
+                    set_active_item({ type: "draw_edge_cut", mouse_down_position_screen: mouse_position_screen });
+                }
             }
         } else if (e.type === "pointerup") {
             // MARK: >> pointer up
@@ -131,6 +135,18 @@ export const NCanvas: React.FC = () => {
                 set_active_item({ type: "none" });
             } else if (active_item.type === "drag_canvas") {
                 dispatch(actions.viewport.translate(offset_screen));
+                set_active_item({ type: "none" });
+            } else if (active_item.type === "draw_edge_cut") {
+                let hit_test = Vector2.line_segments_intersect(mouse_position_screen, active_item.mouse_down_position_screen);
+                let touched_edges = edges.filter(edge => {
+                    let a = helpers.get_handel_position(edge.from, handel_refs.current, canvas_host_ref.current!);
+                    let b = helpers.get_handel_position(edge.to, handel_refs.current, canvas_host_ref.current!);
+                    let segments = handel_bezier_segments(a, b, 20);
+
+
+                    return segments.some(([a, b]) => hit_test(a, b))
+                }).map(item => item.id);
+                dispatch(actions.graph.remove_edges(touched_edges));
                 set_active_item({ type: "none" });
             } else {
                 set_active_item({ type: "none" });
@@ -271,6 +287,14 @@ export const NCanvas: React.FC = () => {
                 ctx.stroke()
             }
         }
+        // MARK: Draw Cut Edges
+        if (active_item.type === "draw_edge_cut") {
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.moveTo(active_item.mouse_down_position_screen.x, active_item.mouse_down_position_screen.y);
+            ctx.lineTo(mouse_position_screen.x, mouse_position_screen.y);
+            ctx.stroke();
+        }
     }
 
     // MARK: DOM RENDER
@@ -349,6 +373,7 @@ export const NCanvas: React.FC = () => {
             onPointerOut={handle_canvas_pointer_event}
             onPointerOver={handle_canvas_pointer_event}
             onWheel={handle_wheel_event}
+            onContextMenu={e => e.preventDefault()}
         >
             <canvas
                 className="n-canvas-canvas rounded-md bg-level-1 w-full h-full select-none"
@@ -405,14 +430,12 @@ export const NCanvas: React.FC = () => {
                                 let { mouse_position_screen } = helpers.get_mouse_positions(e, transform, canvas_host_ref.current!);
                                 if (active_item.type === "none") {
                                     switch (handle_type) {
-                                        case "input":
+                                        case HandelType.input:
                                             break;
-                                        // case "outpu":
-                                        //     break;
-                                        // default:
-
+                                        case HandelType.output:
+                                            break
                                     }
-                                    if (handle_type === "input" || e.ctrlKey) { // User must hold control key to grab the start of an edge
+                                    if (handle_type === HandelType.input || e.ctrlKey) { // User must hold control key to grab the start of an edge
                                         const result = grabby_edge(
                                             edges,
                                             mouse_position_screen,

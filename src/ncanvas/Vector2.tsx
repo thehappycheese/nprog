@@ -35,6 +35,9 @@ export namespace Vector2 {
         }
     }
 
+    export function cross(a: Vector2, b: Vector2): number {
+        return a.x * b.y - a.y * b.x;
+    }
 
     export function mag_squared(a: Vector2): number {
         return Math.sqrt(a.x * a.x + a.y * a.y);
@@ -58,81 +61,17 @@ export namespace Vector2 {
             && relative_test_position.y < rect_size.y
         )
     }
+
+    export const line_segments_intersect = (a: Vector2, b: Vector2) => {
+        const ab = sub(b, a);
+        return (c: Vector2, d: Vector2) => {
+            const cd = sub(d, c);
+            const ac = sub(c, a);
+            const cabcd = cross(ab, cd)
+            const t1 = cross(ac, cd) / cabcd;
+            const t2 = -cross(ac, ab) / cabcd;
+            return t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1;
+        }
+    }
 }
 
-// export default class Vector2 {
-//     readonly x:number;
-//     readonly y:number;
-//     constructor(x=0, y=0){
-//         this.x = x;
-//         this.y = y;
-//     }
-//     clone(){
-//         return new Vector2(this.x, this.y);
-//     }
-//     add(other:Vector2){
-//         return new Vector2(
-//             this.x + other.x,
-//             this.y + other.y,
-//         )
-//     }
-//     sub(other:Vector2){
-//         return new Vector2(
-//             this.x - other.x,
-//             this.y - other.y,
-//         )
-//     }
-//     mul(scalar:number){
-//         return new Vector2(
-//             this.x * scalar,
-//             this.y * scalar,
-//         )
-//     }
-//     div(scalar:number){
-//         return new Vector2(
-//             this.x / scalar,
-//             this.y / scalar,
-//         )
-//     }
-//     dot(other:Vector2){
-//         return this.x*other.x + this.y*other.y;
-//     }
-//     cross(other:Vector2){
-//         return this.x * other.y - this.y * other.x;
-//     }
-//     left(){
-//         return new Vector2(
-//             this.y,
-//             -this.x,
-//         )
-//     }
-//     right(){
-//         return new Vector2(
-//             -this.y,
-//             this.x,
-//         )
-//     }
-//     unit(){
-//         let len = Math.sqrt(this.x*this.x+this.y*this.y);
-//         return new Vector2(
-//             this.x/len,
-//             this.y/len,
-//         )
-//     }
-//     len(){
-//         return Math.sqrt(this.x*this.x+this.y*this.y);
-//     }
-//     ang(){
-//         return Math.atan2(this.y, this.x)
-//     }
-
-//     toString(){
-//         return `[${this.x.toFixed(2)} ${this.y.toFixed(2)}]`
-//     }
-
-//     distance_to(other:Vector2){
-//         let dx = other.x - this.x;
-//         let dy = other.y - this.y;
-//         return Math.sqrt(dx*dx + dy*dy);
-//     }
-// }
