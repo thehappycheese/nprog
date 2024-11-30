@@ -142,8 +142,8 @@ export const JsonInner: React.FC<RenderType<any>> = ({ value, postfix, depth }) 
     </>
 }
 
-export const NJson: React.FC<RenderType<any>> = ({ value }) => {
-    return <div className="font-mono">
+export const NJson: React.FC<RenderType<any> & { font_size?: number }> = ({ value, font_size: font_size_em = 1 }) => {
+    return <div className="font-mono" style={{ fontSize: `${font_size_em}em` }}>
         {
             <JsonInner value={value} depth={1} />
         }

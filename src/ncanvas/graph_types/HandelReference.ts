@@ -1,5 +1,8 @@
 
-export type HandelType = "input" | "output";
+export enum HandelType {
+    input = "input",
+    output = "output",
+}
 
 export interface HandelReference {
     node_id: string;

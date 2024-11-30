@@ -1,7 +1,7 @@
 import { PointerEventHandler, ReactElement } from "react";
 import { Vector2 } from "../../Vector2";
 import { NodeBodyRow } from "./NodeBodyRow";
-import { GraphNode } from "../../graph_types.ts";
+import { GraphNode } from "../../graph_types/GraphNode.ts";
 
 
 export type NodeBodyProps<T> = {

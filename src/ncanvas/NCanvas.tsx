@@ -1,20 +1,21 @@
 import { useCallback, useRef, useState } from "react";
-import { GraphNode, NodeRegistry } from "./graph_types.ts";
-import { HandelReference, HandelReference_compare } from "./graph_types.ts/HandelReference.ts";
 import { useDispatch, useSelector } from "react-redux";
-import { actions, RootState } from "./store";
 import { ActionCreators } from "redux-undo";
-
-import { draw_grid } from "./draw/grid";
-import { ViewportTransform } from "./ViewportTransform";
-import ModalDialog from "./components/ModalDialog.tsx";
-import { useConstrainedNumber } from "./hooks/useConstrainedNumber";
-import { Vector2 } from "./Vector2";
-import helpers from "./helpers";
-import { NJson } from "./components/NJson.tsx";
-import { Accordion } from "./components/Accordion.tsx";
-import { solve_x } from "./bezier/solve_x.tsx";
 import { handel_bezier } from "./bezier/index.tsx";
+import { solve_x } from "./bezier/solve_x.tsx";
+import { Accordion } from "./components/Accordion.tsx";
+import ModalDialog from "./components/ModalDialog.tsx";
+import { NJson } from "./components/NJson.tsx";
+import { draw_grid } from "./draw/grid";
+import { grabby_edge } from "./grabby_edge.tsx";
+import { GraphNode } from "./graph_types/GraphNode.ts";
+import { HandelReference } from "./graph_types/HandelReference.ts";
+import helpers from "./helpers";
+import { useConstrainedNumber } from "./hooks/useConstrainedNumber";
+import { NodeRegistry } from "./graph_types/RegisteredNodeType.ts";
+import { actions, RootState } from "./store";
+import { Vector2 } from "./Vector2";
+import { ViewportTransform } from "./ViewportTransform";
 
 // MARK: type ActiveItem
 type ActiveItem = {
@@ -41,6 +42,8 @@ type ActiveItem = {
 } | {
     type: "handel_grab_end",
     end_of_edge_id: string
+} | {
+    type: "draw_edge_cut"
 };
 
 
@@ -76,7 +79,7 @@ export const NCanvas: React.FC = () => {
     const [dirty_counter, set_dirty_counter] = useState(Number.MIN_SAFE_INTEGER);
 
     const [mouse_position_screen, set_mouse_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
-    const [mouse_position_world, set_mouse_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
+    //const [mouse_position_world, set_mouse_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down_position_world, set_mouse_down_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down_position_screen, set_mouse_down_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down, set_mouse_down] = useState(false);
@@ -89,17 +92,15 @@ export const NCanvas: React.FC = () => {
     // MARK: DERIVED LOCAL STATE
 
     const offset_screen = Vector2.sub(mouse_position_screen, mouse_down_position_screen);
-    //const offset_world = Vector2.scale(offset_screen, viewport.zoom);
-
-    const offset_viewport_midpoint = (
-        mouse_down && active_item.type === "drag_canvas"
-            ? Vector2.add(viewport.midpoint, offset_screen)
-            : viewport.midpoint
-    );
 
     const transform = new ViewportTransform(
         viewport.zoom,
-        offset_viewport_midpoint,
+        //offset_viewport_midpoint,
+        (
+            mouse_down && active_item.type === "drag_canvas"
+                ? Vector2.add(viewport.midpoint, offset_screen)
+                : viewport.midpoint
+        ),
         screen_size
     );
 
@@ -107,9 +108,9 @@ export const NCanvas: React.FC = () => {
 
     // MARK: POINTER EVENT
     const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLElement>) => {
-        let { mouse_position, mouse_position_world } = helpers.mouse_positions(e, transform);
+        let { mouse_position_screen: mouse_position, mouse_position_world } = helpers.get_mouse_positions(e, transform, e.currentTarget);
         set_mouse_position_screen(mouse_position);
-        set_mouse_position_world(mouse_position_world);
+        //set_mouse_position_world(mouse_position_world);
 
         if (e.type === "pointerdown") {
             // MARK: >> pointerdown
@@ -147,9 +148,12 @@ export const NCanvas: React.FC = () => {
 
     // MARK: POINTERMOVE
     const handle_canvas_pointer_move_event = (e: React.PointerEvent<HTMLDivElement>) => {
-        let { mouse_position, mouse_position_world } = helpers.mouse_positions(e, transform);
-        set_mouse_position_screen(mouse_position);
-        set_mouse_position_world(mouse_position_world);
+        let {
+            mouse_position_screen,
+            //mouse_position_world
+        } = helpers.get_mouse_positions(e, transform, e.currentTarget);
+        set_mouse_position_screen(mouse_position_screen);
+        //set_mouse_position_world(mouse_position_world);
     }
 
     // MARK: WHEEL
@@ -246,16 +250,6 @@ export const NCanvas: React.FC = () => {
                     b.x, b.y
                 );
                 ctx.stroke()
-                // MARK: temp bez test
-                let partway = handel_bezier(a, b, 0.2);
-                ctx.fillStyle = "black";
-                ctx.fillRect(partway.x - 3, partway.y - 3, 6, 6);
-                let result = solve_x(a.x + 10, t => handel_bezier(a, b, t));
-                if (result) {
-                    ctx.fillStyle = "yellow";
-                    ctx.fillRect(a.x + 10 - 3, result.y - 3, 6, 6);
-                }
-
             }
 
             if (active_item.type === "handel_out_left") {
@@ -332,21 +326,6 @@ export const NCanvas: React.FC = () => {
             </button>
 
             <button onClick={() => dispatch(actions.viewport.reset())}>Reset View</button>
-
-            <div className="grid grid-cols-2 gap-2 text-[0.8em] font-mono">
-                <div>Mouse Screen</div>
-                <div>{Vector2.toString(mouse_position_screen)}</div>
-                <div>Mouse Down Screen</div>
-                <div>{Vector2.toString(mouse_down_position_screen)}</div>
-                <div>Mouse World</div>
-                <div>{Vector2.toString(mouse_position_world)}</div>
-                <div>Mouse Down World</div>
-                <div>{Vector2.toString(mouse_down_position_world)}</div>
-                <div>Mouse Down</div>
-                <div>{mouse_down.toString()}</div>
-                <div>Active Item</div>
-                <pre className="text-[0.8em]">{JSON.stringify(active_item, null, 1)}</pre>
-            </div>
             <ModalDialog title="View Data">
                 <div className="p-2 h-[80vh] overflow-y-auto">
                     <Accordion
@@ -359,6 +338,7 @@ export const NCanvas: React.FC = () => {
                     />
                 </div>
             </ModalDialog>
+            <NJson value={active_item} depth={0} font_size={0.6} />
         </div>
         <div
             className="n-canvas-canvas-host"
@@ -411,7 +391,7 @@ export const NCanvas: React.FC = () => {
                                 onPointerDown: e => {
                                     // MARK: Body pointer Down
                                     //e.preventDefault();
-                                    let { mouse_position_world } = helpers.mouse_positions(e, transform, canvas_host_ref.current!);
+                                    let { mouse_position_world } = helpers.get_mouse_positions(e, transform, canvas_host_ref.current!);
                                     set_active_item({
                                         type: "drag_node",
                                         target_id: node.id,
@@ -419,48 +399,41 @@ export const NCanvas: React.FC = () => {
                                     })
                                 }
                             }}
-                            onPointerDownHandel={(e, handel_reference, handel_type) => {
+                            onPointerDownHandel={(e, handel_reference, handle_type) => {
                                 // MARK: Handle Pointer Down
                                 e.stopPropagation();
-                                if (active_item.type === "none" && handel_type === "output") {
-                                    if (e.ctrlKey) { // User must hold control key to grab the start of an edge
-                                        let user_grabbed_edges_start = edges.filter(
-                                            item => HandelReference_compare(item.from, handel_reference)
-                                        );
-                                        if (user_grabbed_edges_start.length > 0) {
-                                            // read the position of the edge 20% of the way in, and pick the nearest edge to the mouse
-                                            const edge_from_to = user_grabbed_edges_start
-                                                .map(edge => ({
-                                                    edge_id: edge.id,
-                                                    from: helpers.get_handel_position(edge.from, handel_refs.current, canvas_host_ref.current!),
-                                                    to: helpers.get_handel_position(edge.to, handel_refs.current, canvas_host_ref.current!)
-                                                }));
-                                            const edge_sample_near_click = edge_from_to
-                                                .map(({ edge_id, from, to }) => {
-                                                    let result = solve_x(from.x + 5, t => handel_bezier(from, to, t))
-                                                    if (result && result.t < 0.1) {
-                                                        return { edge_id, partway: { x: from.x, y: result.y } };
-                                                    } else {
-                                                        return { edge_id, partway: { x: from.x, y: handel_bezier(from, to, 0.1).y } };
-                                                    }
+                                let { mouse_position_screen } = helpers.get_mouse_positions(e, transform, canvas_host_ref.current!);
+                                if (active_item.type === "none") {
+                                    switch (handle_type) {
+                                        case "input":
+                                            break;
+                                        // case "outpu":
+                                        //     break;
+                                        // default:
+
+                                    }
+                                    if (handle_type === "input" || e.ctrlKey) { // User must hold control key to grab the start of an edge
+                                        const result = grabby_edge(
+                                            edges,
+                                            mouse_position_screen,
+                                            handel_reference,
+                                            ref => helpers.get_handel_position(ref, handel_refs.current, canvas_host_ref.current!),
+                                            handle_type
+                                        )
+                                        if (result) {
+                                            if (handle_type === "output") {
+                                                set_active_item({
+                                                    type: "handel_grab_start",
+                                                    start_of_edge_id: result
                                                 });
-                                            const best_edge = edge_sample_near_click
-                                                .reduce<{ edge_id: string | null, best: number }>(({ edge_id, best }, { edge_id: challenger_edge_id, partway }) => {
-                                                    let challenger = Vector2.mag_squared(Vector2.sub(mouse_position_screen, partway));
-                                                    if (challenger <= best) {
-                                                        return { edge_id: challenger_edge_id, best: challenger }
-                                                    } else {
-                                                        return { edge_id, best }
-                                                    }
-                                                }, { edge_id: null, best: Infinity })
-                                            //debugger
-                                            let user_grabbed_edge_start_id = best_edge.edge_id ?? user_grabbed_edges_start[0].id;
-                                            set_active_item({
-                                                type: "handel_grab_start",
-                                                start_of_edge_id: user_grabbed_edge_start_id
-                                            });
+                                            } else if (handle_type === "input") {
+                                                set_active_item({
+                                                    type: "handel_grab_end",
+                                                    end_of_edge_id: result
+                                                });
+                                            }
                                         }
-                                    } else {
+                                    } else if (handle_type === "output") {
                                         // TODO: disconnect existing?
                                         // TODO: handel release over none
                                         set_active_item({
@@ -470,7 +443,6 @@ export const NCanvas: React.FC = () => {
                                     }
                                 }
                             }}
-
                             onPointerUpHandel={(e, handel_reference, handel_type) => {
                                 // MARK: Handle Pointer Up
                                 if (active_item.type === "handel_out_left" && handel_type === "input") {

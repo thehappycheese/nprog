@@ -1,20 +1,30 @@
-import { HandelReference } from "./graph_types.ts/HandelReference";
+import { HandelReference } from "./graph_types/HandelReference";
 import { Vector2 } from "./Vector2";
 import { ViewportTransform } from "./ViewportTransform";
 
+/**
+ * 
+ * @param event Pointer Event on any element (can be different to the one in which we want the mouse coordinates)
+ * @param transform Viewport transform to apply
+ * @param reference_element Element relative to which the screen coordinate should be calculated. Often but not always event.target
+ * @returns 
+ */
 const get_mouse_positions: (
-    e: React.PointerEvent<HTMLElement>,
+    event: React.PointerEvent<HTMLElement>,
     transform: ViewportTransform,
-    target?: HTMLElement
-) => { mouse_position: Vector2.Vector2, mouse_position_world: Vector2.Vector2 } = (e, transform, target) => {
-    const canvas_rect = (target ?? e.currentTarget).getBoundingClientRect();
-    let mouse_position = {
-        x: e.clientX - canvas_rect.left,
-        y: e.clientY - canvas_rect.top
+    reference_element: HTMLElement
+) => {
+    mouse_position_screen: Vector2.Vector2,
+    mouse_position_world: Vector2.Vector2
+} = (event, transform, reference_element) => {
+    const canvas_rect = reference_element.getBoundingClientRect();
+    let mouse_position_screen = {
+        x: event.clientX - canvas_rect.left,
+        y: event.clientY - canvas_rect.top
     };
-    let mouse_position_world = transform.screen_to_world(mouse_position)
+    let mouse_position_world = transform.screen_to_world(mouse_position_screen)
 
-    return { mouse_position, mouse_position_world };
+    return { mouse_position_screen, mouse_position_world };
 }
 
 /**Screen position of handle */
@@ -37,6 +47,6 @@ const get_handel_position = (
 };
 
 export default {
-    mouse_positions: get_mouse_positions,
+    get_mouse_positions,
     get_handel_position
 }

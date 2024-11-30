@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 
-interface SettingsMenuProps {
+export interface ModalDialogProps {
     title: string;
     children: React.ReactNode;
 }
 
-const ModalDialog: React.FC<SettingsMenuProps> = ({ title, children }) => {
+const ModalDialog: React.FC<ModalDialogProps> = ({ title, children }) => {
     let [is_open, set_is_open] = useState(false);
     return <>
         <button

@@ -1,5 +1,5 @@
 import { forwardRef, ForwardedRef, PointerEvent } from "react";
-import { HandelReference, HandelType } from "../../graph_types.ts/HandelReference.ts";
+import { HandelReference, HandelType } from "../../graph_types/HandelReference.ts";
 
 export type PointerHandelHandler = (e: PointerEvent<HTMLDivElement>, handel_reference: HandelReference, handel_type: HandelType) => void;
 

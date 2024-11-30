@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { GraphNode, GraphEdge } from '../graph_types.ts';
+import { GraphNode } from "../graph_types/GraphNode.ts";
+import { GraphEdge } from "../graph_types/GraphEdge.ts";
 import { Vector2 } from '../Vector2';
-import helpers from '../helpers';
 
 
 export interface GraphState {

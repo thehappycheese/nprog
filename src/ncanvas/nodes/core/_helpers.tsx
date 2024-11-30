@@ -15,6 +15,7 @@ export const assignHandelRef = (
     } else {
         outer_ref.current = outer_ref.current ?? {};
         outer_ref.current = {
+            // TODO: I don't think it is necessary to perform this assignment immutably since this is a ref.
             ...outer_ref.current,
             [node_id]: {
                 ...(outer_ref.current[node_id] ?? {}),
