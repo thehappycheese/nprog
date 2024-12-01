@@ -10,6 +10,7 @@ export const HelpControls = () => {
                 <div>Pan</div><div><MouseIcon button="middle" /> Drag</div>
                 <div>Move Nodes /<br />Grab Handles to Create Edges</div><div><MouseIcon button="left" /> Drag</div>
                 <div>Zoom In / Out</div><div><MouseIcon button="scroll" /> Scroll</div>
+                <div>Context Menu /<br/> Add Nodes</div><div><MouseIcon button="right" /> Scroll</div>
             </div>
         </div>
     </ModalDialog>

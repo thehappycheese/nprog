@@ -3,6 +3,7 @@ import { Vector2 } from "../Vector2"
 
 export type ContextMenuRef = {
     open_at: (position: Vector2.Vector2) => void;
+    close: () => void;
 }
 
 export const ContextMenu: React.ForwardRefExoticComponent<{
@@ -17,10 +18,10 @@ export const ContextMenu: React.ForwardRefExoticComponent<{
         //ref(ref => ref.current = { x: "hey" });
         ref.current = {
             open_at: (position: Vector2.Vector2) => {
-                console.log("eh??", is_open, position);
-                set_open(true)
-                set_position(position)
-            }
+                set_open(true);
+                set_position(position);
+            },
+            close:()=>set_open(false)
         }
     }
 

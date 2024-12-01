@@ -16,7 +16,6 @@ import { Vector2 } from "./Vector2";
 import { ViewportTransform } from "./ViewportTransform";
 import { handel_bezier_segments } from "./bezier/handel_bezier.tsx";
 import { HelpControls } from "./components/HelpControls.tsx";
-import { MouseIcon } from "./components/MouseIcon.tsx";
 import { ContextMenu, ContextMenuRef } from "./components/ContextMenu.tsx";
 
 // MARK: type ActiveItem
@@ -84,7 +83,7 @@ export const NCanvas: React.FC = () => {
     const [dirty_counter, set_dirty_counter] = useState(Number.MIN_SAFE_INTEGER);
 
     const [mouse_position_screen, set_mouse_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
-    //const [mouse_position_world, set_mouse_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
+    const [mouse_position_world, set_mouse_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down_position_world, set_mouse_down_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down_position_screen, set_mouse_down_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
     const [mouse_down, set_mouse_down] = useState(false);
@@ -129,6 +128,7 @@ export const NCanvas: React.FC = () => {
     const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLElement>) => {
         let { mouse_position_screen, mouse_position_world } = helpers.get_mouse_positions(e, transform, e.currentTarget);
         set_mouse_position_screen(mouse_position_screen);
+        set_mouse_position_world(mouse_position_world);
         //set_mouse_position_world(mouse_position_world);
 
         if (e.type === "pointerdown") {
@@ -196,7 +196,7 @@ export const NCanvas: React.FC = () => {
             //mouse_position_world
         } = helpers.get_mouse_positions(e, transform, e.currentTarget);
         set_mouse_position_screen(mouse_position_screen);
-        //set_mouse_position_world(mouse_position_world);
+        set_mouse_position_world(mouse_position_world);
     }
 
     // MARK: WHEEL
@@ -331,7 +331,18 @@ export const NCanvas: React.FC = () => {
         <div className="n-canvas-controls">
             <div style={{ display: "none" }}>{dirty_counter}</div>
             <ContextMenu ref={context_menu_ref}>
-                Yo
+                <button
+                    onClick={(e)=>{
+                        dispatch(actions.graph.add_node({
+                            "title":"New Node!",
+                            "registered_type":"add",
+                            "data":null,
+                            "position":mouse_position_world,
+                            "id":"TODO:"+Math.random()
+                        }));
+                        context_menu_ref.current!.close();
+                    }}
+                >Add</button>
             </ContextMenu>
             <h1 className="text-4xl font-bold mb-3">🐲 <sup>N</sup>Canvas</h1>
             <ModalDialog title="Settings">
