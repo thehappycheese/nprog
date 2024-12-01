@@ -1,0 +1,15 @@
+@keyframes scrollGradient {
+    0% {
+        background-position: 0% 0%;
+    }
+    100% {
+       background-position: 0% 80%;
+    }
+}
+  
+.scrolling-gradient {
+    background-image: repeating-linear-gradient(to bottom, #BBB 0% 20%, black 20% 40%);
+    background-repeat: repeat-y;
+    background-size: 100% 200%;
+    animation: scrollGradient 0.5s linear infinite;
+}

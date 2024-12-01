@@ -23,11 +23,11 @@ export const NodeBody = <T,>(props: NodeBodyProps<T>) => {
             fontSize: `${props.font_scale}em`,
             borderColor: props.selected ? "rgb(190 40 64)" : ""
         }}
-        className="absolute top-0 left-0 box-border rounded-md border-[2px] border-level-2 bg-level-1"
+        className="absolute top-[calc(-1.2rem-4px)] left-0 rounded-md border-[2px] border-level-2 bg-level-1"
         onPointerDown={props.onPointerDown}
         title={props.node.id}
     >
-        <div className="text-sm p-[0.1rem] ps-1 pe-1 bg-brand-accent rounded-t-[3px]">{props.node.title}</div>
+        <div className="text-[0.8rem] leading-[1.2rem]  p-[0.1rem] ps-1 pe-1 bg-brand-accent rounded-t-[3px]">{props.node.title}</div>
         <div className="ml-[-2px] mr-[-2px]">
             {props.children}
         </div>

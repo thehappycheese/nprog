@@ -15,6 +15,8 @@ export default {
                 "primary-1": "#CACACA",
                 "primary-2": "#C9B9B9",
                 "brand-accent": "#be2840",
+                "brand-accent-bright-1": "rgb(232, 73, 88)",
+                "brand-accent-bright-2": "rgb(240, 142, 142)",
                 "url-1": "#CACAFF",
             },
             dropShadow: {

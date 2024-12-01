@@ -50,39 +50,7 @@ const initial_state: GraphState = {
 
     ],
     edges: [
-        // {
-        //     id: `edge-${sequence()}`,
-        //     from: {
-        //         node_id: "node-0",
-        //         handel_id: "R0",
-        //     },
-        //     to: {
-        //         node_id: "node-3",
-        //         handel_id: "L0"
-        //     }
-        // },
-        // {
-        //     id: `edge-${sequence()}`,
-        //     from: {
-        //         node_id: "node-1",
-        //         handel_id: "R0",
-        //     },
-        //     to: {
-        //         node_id: "node-3",
-        //         handel_id: "L1"
-        //     }
-        // },
-        // {
-        //     id: `edge-${sequence()}`,
-        //     from: {
-        //         node_id: "node-3",
-        //         handel_id: "R0",
-        //     },
-        //     to: {
-        //         node_id: "node-2",
-        //         handel_id: "L0"
-        //     }
-        // }
+
     ],
     selected: [{ type: "node", id: "node-0" }]
 };

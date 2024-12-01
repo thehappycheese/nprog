@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ActionCreators } from "redux-undo";
 import { Accordion } from "./components/Accordion.tsx";
@@ -15,6 +15,9 @@ import { actions, RootState } from "./store";
 import { Vector2 } from "./Vector2";
 import { ViewportTransform } from "./ViewportTransform";
 import { handel_bezier_segments } from "./bezier/handel_bezier.tsx";
+import { HelpControls } from "./components/HelpControls.tsx";
+import { MouseIcon } from "./components/MouseIcon.tsx";
+import { ContextMenu, ContextMenuRef } from "./components/ContextMenu.tsx";
 
 // MARK: type ActiveItem
 type ActiveItem = {
@@ -55,6 +58,8 @@ export const NCanvas: React.FC = () => {
 
     const handel_refs = useRef<Record<string, Record<string, HTMLDivElement>>>({})
 
+    const context_menu_ref = useRef<ContextMenuRef>(null);
+
     // MARK: DERIVED FROM REFS
 
     const screen_size: Vector2.Vector2 = (
@@ -93,7 +98,7 @@ export const NCanvas: React.FC = () => {
 
     const offset_screen = Vector2.sub(mouse_position_screen, mouse_down_position_screen);
 
-    const transform = new ViewportTransform(
+    const transform = useMemo(() => new ViewportTransform(
         viewport.zoom,
         //offset_viewport_midpoint,
         (
@@ -102,11 +107,12 @@ export const NCanvas: React.FC = () => {
                 : viewport.midpoint
         ),
         screen_size
-    );
+    ), [active_item, mouse_down, viewport, offset_screen, screen_size]);
 
     // MARK: GLOBAL EVENTS
     useEffect(() => {
         const handle_keydown = (e: KeyboardEvent) => {
+            console.log("GLOBAL EVENT!");
             if (e.key === "z" && e.ctrlKey) {
                 dispatch(ActionCreators.undo())
             } else if (e.key === "y" && e.ctrlKey) {
@@ -117,7 +123,7 @@ export const NCanvas: React.FC = () => {
         return () => {
             window.removeEventListener("keydown", handle_keydown);
         }
-    }, [])
+    }, [dispatch]);
 
     // MARK: POINTER EVENT
     const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLElement>) => {
@@ -140,7 +146,15 @@ export const NCanvas: React.FC = () => {
         } else if (e.type === "pointerup") {
             // MARK: >> pointer up
             set_mouse_down(false);
-            if (active_item.type === "drag_node") {
+            if (active_item.type === "none") {
+                if (e.button===2 && context_menu_ref.current) {
+                    e.preventDefault()
+                    context_menu_ref.current.open_at({
+                        x: e.clientX,
+                        y: e.clientY
+                    });
+                }
+            } else if (active_item.type === "drag_node") {
                 dispatch(actions.graph.offset_node({
                     id: active_item.target_id,
                     offset: Vector2.sub(mouse_position_world, active_item.mouse_down_coord)
@@ -232,88 +246,94 @@ export const NCanvas: React.FC = () => {
 
     // MARK: CANVAS RENDER
     // TODO: consider switching back to useLayoutEffect
-    if (canvas_ref.current) {
-        const canvas = canvas_ref.current;
-        const ctx = canvas.getContext("2d")!;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    useLayoutEffect(() => {
+        if (canvas_ref.current) {
+            const canvas = canvas_ref.current;
+            const ctx = canvas.getContext("2d")!;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // MARK: >> draw grid
-        draw_grid(
-            ctx,
-            transform,
-            {
-                grid_spacing,
-                color: "rgb(32, 28, 32)",
-                line_width: 1,
-                minimum_spacing_px: 20,
-                show_origin_gizmo: false,
-            }
-        )
+            // MARK: >> draw grid
+            draw_grid(
+                ctx,
+                transform,
+                {
+                    grid_spacing,
+                    color: "rgb(32, 28, 32)",
+                    line_width: 1,
+                    minimum_spacing_px: 20,
+                    show_origin_gizmo: false,
+                }
+            )
 
-        // MARK: >> draw edges
-        if (canvas_host_ref.current !== null) {
+            // MARK: >> draw edges
+            if (canvas_host_ref.current !== null) {
 
 
 
-            for (let edge of edges) {
-                let a = helpers.get_handel_position(edge.from, handel_refs.current, canvas_host_ref.current);
-                let b = helpers.get_handel_position(edge.to, handel_refs.current, canvas_host_ref.current);
+                for (let edge of edges) {
+                    let a = helpers.get_handel_position(edge.from, handel_refs.current, canvas_host_ref.current);
+                    let b = helpers.get_handel_position(edge.to, handel_refs.current, canvas_host_ref.current);
 
-                if (active_item.type === "handel_grab_start" && active_item.start_of_edge_id === edge.id) {
-                    a = mouse_position_screen;
-                } else if (active_item.type === "handel_grab_end" && active_item.end_of_edge_id === edge.id) {
-                    b = mouse_position_screen;
+                    if (active_item.type === "handel_grab_start" && active_item.start_of_edge_id === edge.id) {
+                        a = mouse_position_screen;
+                    } else if (active_item.type === "handel_grab_end" && active_item.end_of_edge_id === edge.id) {
+                        b = mouse_position_screen;
+                    }
+
+                    let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
+                    let c1 = Vector2.add(a, abx);
+                    let c2 = Vector2.sub(b, abx);
+                    ctx.strokeStyle = "white";
+                    ctx.lineWidth = 3;
+
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.bezierCurveTo(
+                        c1.x, c1.y,
+                        c2.x, c2.y,
+                        b.x, b.y
+                    );
+                    ctx.stroke()
                 }
 
-                let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
-                let c1 = Vector2.add(a, abx);
-                let c2 = Vector2.sub(b, abx);
-                ctx.strokeStyle = "white";
-                ctx.lineWidth = 3;
+                if (active_item.type === "handel_out_left") {
+                    let a = helpers.get_handel_position(active_item.source, handel_refs.current, canvas_host_ref.current);
+                    let b = mouse_position_screen
+                    let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
+                    let c1 = Vector2.add(a, abx);
+                    let c2 = Vector2.sub(b, abx);
+                    ctx.strokeStyle = "white";
+                    ctx.lineWidth = 3;
 
-                ctx.beginPath();
-                ctx.moveTo(a.x, a.y);
-                ctx.bezierCurveTo(
-                    c1.x, c1.y,
-                    c2.x, c2.y,
-                    b.x, b.y
-                );
-                ctx.stroke()
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.bezierCurveTo(
+                        c1.x, c1.y,
+                        c2.x, c2.y,
+                        b.x, b.y
+                    );
+                    ctx.stroke()
+                }
             }
-
-            if (active_item.type === "handel_out_left") {
-                let a = helpers.get_handel_position(active_item.source, handel_refs.current, canvas_host_ref.current);
-                let b = mouse_position_screen
-                let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
-                let c1 = Vector2.add(a, abx);
-                let c2 = Vector2.sub(b, abx);
-                ctx.strokeStyle = "white";
-                ctx.lineWidth = 3;
-
+            // MARK: Draw Cut Edges
+            if (active_item.type === "draw_edge_cut") {
+                ctx.strokeStyle = "red";
                 ctx.beginPath();
-                ctx.moveTo(a.x, a.y);
-                ctx.bezierCurveTo(
-                    c1.x, c1.y,
-                    c2.x, c2.y,
-                    b.x, b.y
-                );
-                ctx.stroke()
+                ctx.moveTo(active_item.mouse_down_position_screen.x, active_item.mouse_down_position_screen.y);
+                ctx.lineTo(mouse_position_screen.x, mouse_position_screen.y);
+                ctx.stroke();
             }
         }
-        // MARK: Draw Cut Edges
-        if (active_item.type === "draw_edge_cut") {
-            ctx.strokeStyle = "red";
-            ctx.beginPath();
-            ctx.moveTo(active_item.mouse_down_position_screen.x, active_item.mouse_down_position_screen.y);
-            ctx.lineTo(mouse_position_screen.x, mouse_position_screen.y);
-            ctx.stroke();
-        }
-    }
+    }, [active_item, mouse_position_screen, edges, grid_spacing, transform]);
 
     // MARK: DOM RENDER
     return <div className="n-canvas-root">
         <div className="n-canvas-controls">
             <div style={{ display: "none" }}>{dirty_counter}</div>
+            <ContextMenu ref={context_menu_ref}>
+                Yo
+            </ContextMenu>
+            <h1 className="text-4xl font-bold mb-3">🐲 <sup>N</sup>Canvas</h1>
             <ModalDialog title="Settings">
                 <div className="grid grid-cols-1 gap-2 p-5">
                     <button onClick={() => dispatch(ActionCreators.clearHistory())}>Clear Undo History</button>
@@ -375,6 +395,7 @@ export const NCanvas: React.FC = () => {
                     />
                 </div>
             </ModalDialog>
+            <HelpControls />
             <NJson value={active_item} depth={0} font_size={0.6} />
         </div>
         <div
@@ -386,7 +407,7 @@ export const NCanvas: React.FC = () => {
             onPointerOut={handle_canvas_pointer_event}
             onPointerOver={handle_canvas_pointer_event}
             onWheel={handle_wheel_event}
-            onContextMenu={e => !e.ctrlKey || e.preventDefault()}
+            onContextMenu={e => { e.preventDefault() }}
         >
             <canvas
                 className="n-canvas-canvas rounded-md bg-level-1 w-full h-full select-none"
@@ -498,7 +519,7 @@ export const NCanvas: React.FC = () => {
                 })()
             }
         </div>
-    </div>
+    </div >
 }
 
 

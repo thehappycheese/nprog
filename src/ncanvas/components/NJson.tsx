@@ -81,10 +81,10 @@ const JsonObject: React.FC<RenderType<object>> = ({ value, postfix }) => {
                         intersperse(
                             key => <span key={key + entries.length} className="n-json-delim">,&nbsp;</span>,
                             entries.map(([key, value], index) =>
-                                <span key={index}>
+                                <span key={"outer-" + index} >
                                     <span className="n-json-object-key">{key}</span>
                                     <span className="n-json-delim">:&nbsp;</span>
-                                    <JsonInner value={value} depth={0} />
+                                    <JsonInner key={"inner-" + index} value={value} depth={0} />
                                 </span>
                             )
                         )
@@ -100,10 +100,10 @@ const JsonObject: React.FC<RenderType<object>> = ({ value, postfix }) => {
         <span className="n-json-paren">{"{"}</span>
         {
             entries.map(([key, value], index) =>
-                <div key={index} style={{ marginLeft: `${1}em` }}>
+                <div key={"outer-" + index} style={{ marginLeft: `${1}em` }}>
                     <span className="n-json-object-key">{key}</span>
                     <span className="n-json-delim">:&nbsp;</span>
-                    <JsonInner key={index} value={value} postfix={<span className="n-json-delim">,</span>} depth={0} />
+                    <JsonInner key={"inner-" + index} value={value} postfix={<span className="n-json-delim">,</span>} depth={0} />
                 </div>
             )
         }
