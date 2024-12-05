@@ -17,6 +17,7 @@ import { ViewportTransform } from "./ViewportTransform";
 import { handel_bezier_segments } from "./bezier/handel_bezier.tsx";
 import { HelpControls } from "./components/HelpControls.tsx";
 import { ContextMenu, ContextMenuRef } from "./components/ContextMenu.tsx";
+import { HandleRefRegistry } from "./nodes/core/Handel.tsx";
 
 // MARK: type ActiveItem
 type ActiveItem = {
@@ -55,7 +56,7 @@ export const NCanvas: React.FC = () => {
     const canvas_host_ref = useRef<HTMLDivElement | null>(null);
     const resize_observer_ref = useRef<ResizeObserver | null>(null);
 
-    const handel_refs = useRef<Record<string, Record<string, HTMLDivElement>>>({})
+    const handel_refs = useRef<HandleRefRegistry>({})
 
     const context_menu_ref = useRef<ContextMenuRef>(null);
 

@@ -1,8 +1,7 @@
 import { ForwardedRef, forwardRef } from "react";
 import { NodeBody } from "./core/NodeBody.tsx";
-import { Handle } from "./core/Handel.tsx";
+import { Handle, HandleRefRegistry } from "./core/Handel.tsx";
 import { NodeBodyRow } from "./core/NodeBodyRow.tsx";
-import { assignHandelRef } from "./core/_helpers.tsx";
 import { HandelType } from "../graph_types/HandelReference.ts";
 import { NodeProps } from "./core/NodeProps.ts";
 
@@ -10,7 +9,7 @@ import { NodeProps } from "./core/NodeProps.ts";
 export const NodeTau = forwardRef(
     (
         props: NodeProps<number>,
-        ref: ForwardedRef<Record<string, Record<string, HTMLDivElement>>>
+        ref: ForwardedRef<HandleRefRegistry>
     ) => {
         return <NodeBody
             {...props.body_props}
@@ -22,7 +21,9 @@ export const NodeTau = forwardRef(
                     handel_type={HandelType.output}
                     onPointerDown={props.onPointerDownHandel}
                     onPointerUp={props.onPointerUpHandel}
-                    ref={assignHandelRef(ref, props.node.id, "R0")}
+                    node_id={props.node.id}
+                    handel_id="R0"
+                    ref={ref}
                 />}
             >
                 Tau

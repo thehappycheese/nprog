@@ -3,18 +3,44 @@ import { HandelReference, HandelType } from "../../graph_types/HandelReference.t
 
 export type PointerHandelHandler = (e: PointerEvent<HTMLDivElement>, handel_reference: HandelReference, handel_type: HandelType) => void;
 
+
+export type HandleRefRegistry = {
+    [node_id:string]:{
+        [handel_id:string]:HTMLDivElement
+    }
+}
+
+
 export const Handle = forwardRef((props: {
     background_color: string;
     handel_type: HandelType,
     handel_reference: HandelReference;
+    node_id:string,
+    handel_id:string,
     onPointerDown: PointerHandelHandler;
     onPointerUp: PointerHandelHandler;
-}, ref: ForwardedRef<HTMLDivElement>) => {
+}, ref: ForwardedRef<HandleRefRegistry>) => {
     let hit_box_padding = 0.4;
     let width = 0.8;
     let height = 0.8;
     return <div
-        ref={ref}
+        ref={handel_div=>{
+            if(ref ===null){
+                return;
+            }else if (typeof ref === "function") {
+                // TODO: unhandled
+                throw new Error("Not sure how to handel this callback ref");
+            } else {
+                ref.current = {
+                    // TODO: I don't think it is necessary to perform this assignment immutably since this is a ref.
+                    ...(ref.current ?? {}),
+                    [props.node_id]: {
+                        ...(ref?.current?.[props.node_id] ?? {}),
+                        ...(handel_div ? { [props.handel_id]: handel_div } : {})
+                    }
+                };
+            }
+        }}
         style={{
             padding: `${hit_box_padding}rem`,
             borderRadius: `${hit_box_padding}rem`,
