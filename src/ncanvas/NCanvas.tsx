@@ -18,6 +18,7 @@ import { handel_bezier_segments } from "./bezier/handel_bezier.tsx";
 import { HelpControls } from "./components/HelpControls.tsx";
 import { ContextMenu, ContextMenuRef } from "./components/ContextMenu.tsx";
 import { HandleRefRegistry } from "./nodes/core/Handel.tsx";
+import { NodeRemoved } from "./nodes/NodeRemoved.tsx";
 
 // MARK: type ActiveItem
 type ActiveItem = {
@@ -36,16 +37,22 @@ type ActiveItem = {
     target_id: string,
     mouse_down_coord: Vector2.Vector2,
 } | {
-    type: "handel_out_left",
+    type: "start_edge_from_left",
+    source: HandelReference
+}|{
+    type: "start_edge_from_right",
     source: HandelReference
 } | {
     type: "handel_grab_start",
-    start_of_edge_id: string
+    edge_id: string
 } | {
     type: "handel_grab_end",
-    end_of_edge_id: string
+    edge_id: string
 } | {
     type: "draw_edge_cut",
+    mouse_down_position_screen: Vector2.Vector2
+} | {
+    type: "draw_edge_split",
     mouse_down_position_screen: Vector2.Vector2
 };
 
@@ -112,7 +119,6 @@ export const NCanvas: React.FC = () => {
     // MARK: GLOBAL EVENTS
     useEffect(() => {
         const handle_keydown = (e: KeyboardEvent) => {
-            console.log("GLOBAL EVENT!");
             if (e.key === "z" && e.ctrlKey) {
                 dispatch(ActionCreators.undo())
             } else if (e.key === "y" && e.ctrlKey) {
@@ -125,98 +131,7 @@ export const NCanvas: React.FC = () => {
         }
     }, [dispatch]);
 
-    // MARK: POINTER EVENT
-    const handle_canvas_pointer_event = (e: React.PointerEvent<HTMLElement>) => {
-        let { mouse_position_screen, mouse_position_world } = helpers.get_mouse_positions(e, transform, e.currentTarget);
-        set_mouse_position_screen(mouse_position_screen);
-        set_mouse_position_world(mouse_position_world);
-        //set_mouse_position_world(mouse_position_world);
-
-        if (e.type === "pointerdown") {
-            // MARK: >> pointerdown
-            set_mouse_down(true);
-            set_mouse_down_position_screen(mouse_position_screen);
-            set_mouse_down_position_world(mouse_position_world);
-            if (e.target === canvas_ref.current) {
-                if (e.button === 1) {
-                    set_active_item({ type: "drag_canvas" });
-                } else if (e.button === 2 && e.ctrlKey) {
-                    set_active_item({ type: "draw_edge_cut", mouse_down_position_screen: mouse_position_screen });
-                }
-            }
-        } else if (e.type === "pointerup") {
-            // MARK: >> pointer up
-            set_mouse_down(false);
-            if (active_item.type === "none") {
-                if (e.button===2 && context_menu_ref.current) {
-                    e.preventDefault()
-                    context_menu_ref.current.open_at({
-                        x: e.clientX,
-                        y: e.clientY
-                    });
-                }
-            } else if (active_item.type === "drag_node") {
-                dispatch(actions.graph.offset_node({
-                    id: active_item.target_id,
-                    offset: Vector2.sub(mouse_position_world, active_item.mouse_down_coord)
-                }))
-                set_active_item({ type: "none" });
-            } else if (active_item.type === "drag_canvas") {
-                dispatch(actions.viewport.translate(offset_screen));
-                set_active_item({ type: "none" });
-            } else if (active_item.type === "draw_edge_cut") {
-                let hit_test = Vector2.line_segments_intersect(mouse_position_screen, active_item.mouse_down_position_screen);
-                let touched_edges = edges.filter(edge => {
-                    let a = helpers.get_handel_position(edge.from, handel_refs.current, canvas_host_ref.current!);
-                    let b = helpers.get_handel_position(edge.to, handel_refs.current, canvas_host_ref.current!);
-                    let segments = handel_bezier_segments(a, b, 20);
-
-
-                    return segments.some(([a, b]) => hit_test(a, b))
-                }).map(item => item.id);
-                dispatch(actions.graph.remove_edges(touched_edges));
-                set_active_item({ type: "none" });
-            } else {
-                set_active_item({ type: "none" });
-            }
-        } else if (e.type === "pointerout") {
-            if (e.target === e.currentTarget) {
-                set_active_item({ type: "none" });
-            }
-        } else if (e.type === "pointerover") {
-            // TODO: pointer over
-        } else {
-            console.log(`Pointer event ${e.type} WHAT?`);
-        }
-    };
-
-    // MARK: POINTERMOVE
-    const handle_canvas_pointer_move_event = (e: React.PointerEvent<HTMLDivElement>) => {
-        let {
-            mouse_position_screen,
-            //mouse_position_world
-        } = helpers.get_mouse_positions(e, transform, e.currentTarget);
-        set_mouse_position_screen(mouse_position_screen);
-        set_mouse_position_world(mouse_position_world);
-    }
-
-    // MARK: WHEEL
-    const handle_wheel_event = (e: React.WheelEvent<HTMLDivElement>) => {
-        if (e.deltaY < 0) {
-            dispatch(actions.viewport.zoom_in_to({
-                target_screen_position: mouse_position_screen,
-                screen_size
-            }));
-            set_dirty_counter(i => i + 1);
-        } else if (e.deltaY > 0) {
-            dispatch(actions.viewport.zoom_out_from({
-                target_screen_position: mouse_position_screen,
-                screen_size
-            }));
-            set_dirty_counter(i => i + 1);
-        }
-    }
-
+    // MARK: RESIZE CALLBACK
     const canvas_resize_callback = useCallback((canvas_host: HTMLDivElement | null) => {
         // const canvas = canvas_ref.current;
         // if(!canvas) return;
@@ -269,60 +184,44 @@ export const NCanvas: React.FC = () => {
             // MARK: >> draw edges
             if (canvas_host_ref.current !== null) {
 
-
-
                 for (let edge of edges) {
                     let a = helpers.get_handel_position(edge.from, handel_refs.current, canvas_host_ref.current);
                     let b = helpers.get_handel_position(edge.to, handel_refs.current, canvas_host_ref.current);
 
-                    if (active_item.type === "handel_grab_start" && active_item.start_of_edge_id === edge.id) {
+                    if (active_item.type === "handel_grab_start" && active_item.edge_id === edge.id) {
                         a = mouse_position_screen;
-                    } else if (active_item.type === "handel_grab_end" && active_item.end_of_edge_id === edge.id) {
+                    } else if (active_item.type === "handel_grab_end" && active_item.edge_id === edge.id) {
                         b = mouse_position_screen;
                     }
-
-                    let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
-                    let c1 = Vector2.add(a, abx);
-                    let c2 = Vector2.sub(b, abx);
                     ctx.strokeStyle = "white";
                     ctx.lineWidth = 3;
-
-                    ctx.beginPath();
-                    ctx.moveTo(a.x, a.y);
-                    ctx.bezierCurveTo(
-                        c1.x, c1.y,
-                        c2.x, c2.y,
-                        b.x, b.y
-                    );
-                    ctx.stroke()
+                    helpers.draw_edge(a,b,ctx);
                 }
 
-                if (active_item.type === "handel_out_left") {
+                // MARK: Draw dragged Edges
+                if (active_item.type === "start_edge_from_left" || active_item.type==="start_edge_from_right") {
                     let a = helpers.get_handel_position(active_item.source, handel_refs.current, canvas_host_ref.current);
-                    let b = mouse_position_screen
-                    let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
-                    let c1 = Vector2.add(a, abx);
-                    let c2 = Vector2.sub(b, abx);
+                    let b = mouse_position_screen;
+                    if (active_item.type == "start_edge_from_right"){
+                        [a,b] = [b,a];
+                    }
                     ctx.strokeStyle = "white";
                     ctx.lineWidth = 3;
-
-                    ctx.beginPath();
-                    ctx.moveTo(a.x, a.y);
-                    ctx.bezierCurveTo(
-                        c1.x, c1.y,
-                        c2.x, c2.y,
-                        b.x, b.y
-                    );
-                    ctx.stroke()
+                    helpers.draw_edge(a,b, ctx);
                 }
             }
             // MARK: Draw Cut Edges
-            if (active_item.type === "draw_edge_cut") {
+            if (active_item.type === "draw_edge_cut" || active_item.type==="draw_edge_split") {
                 ctx.strokeStyle = "red";
+                if(active_item.type==="draw_edge_split"){
+                    ctx.strokeStyle = "grey";
+                    ctx.setLineDash([3,3]);
+                }
                 ctx.beginPath();
                 ctx.moveTo(active_item.mouse_down_position_screen.x, active_item.mouse_down_position_screen.y);
                 ctx.lineTo(mouse_position_screen.x, mouse_position_screen.y);
                 ctx.stroke();
+                ctx.setLineDash([]);
             }
         }
     }, [active_item, mouse_position_screen, edges, grid_spacing, transform]);
@@ -333,7 +232,7 @@ export const NCanvas: React.FC = () => {
             <div style={{ display: "none" }}>{dirty_counter}</div>
             <ContextMenu ref={context_menu_ref}>
                 <button
-                    onClick={(e)=>{
+                    onClick={()=>{
                         dispatch(actions.graph.add_node({
                             "title":"New Node!",
                             "registered_type":"add",
@@ -413,12 +312,96 @@ export const NCanvas: React.FC = () => {
         <div
             className="n-canvas-canvas-host"
             ref={canvas_resize_callback}
-            onPointerMove={handle_canvas_pointer_move_event}
-            onPointerDown={handle_canvas_pointer_event}
-            onPointerUp={handle_canvas_pointer_event}
-            onPointerOut={handle_canvas_pointer_event}
-            onPointerOver={handle_canvas_pointer_event}
-            onWheel={handle_wheel_event}
+            onPointerMove={e=>{
+                // MARK: >> Host.pointermove
+                let { mouse_position_screen, mouse_position_world } = helpers.get_mouse_positions(e, transform, e.currentTarget);
+                set_mouse_position_screen(mouse_position_screen);
+                set_mouse_position_world(mouse_position_world);
+            }}
+            onPointerDown={e=>{
+                // MARK: >> Host.pointerdown
+                let { mouse_position_screen, mouse_position_world } = helpers.get_mouse_positions(e, transform, canvas_host_ref.current!);
+                set_mouse_position_screen(mouse_position_screen);
+                set_mouse_position_world(mouse_position_world);
+                set_mouse_down(true);
+                set_mouse_down_position_screen(mouse_position_screen);
+                set_mouse_down_position_world(mouse_position_world);
+                if (e.target === canvas_ref.current) {
+                    if (e.button === 1) {
+                        set_active_item({ type: "drag_canvas" });
+                    } else if (e.button === 2 && e.ctrlKey) {
+                        set_active_item({ type: "draw_edge_cut", mouse_down_position_screen: mouse_position_screen });
+                    }else if (e.button === 2 && e.shiftKey) {
+                        set_active_item({ type: "draw_edge_split", mouse_down_position_screen: mouse_position_screen });
+                    }
+                }
+            }}
+            onPointerUp={e=>{
+                // MARK: >> Host.pointerup
+                let { mouse_position_screen, mouse_position_world } = helpers.get_mouse_positions(e, transform, canvas_host_ref.current!);
+                set_mouse_position_screen(mouse_position_screen);
+                set_mouse_position_world(mouse_position_world);
+                set_mouse_down(false);
+                if (active_item.type === "none") {
+                    if (e.button===2 && context_menu_ref.current) {
+                        e.preventDefault()
+                        context_menu_ref.current.open_at({
+                            x: e.clientX,
+                            y: e.clientY
+                        });
+                    }
+                } else if (active_item.type === "drag_node") {
+                    dispatch(actions.graph.offset_node({
+                        id: active_item.target_id,
+                        offset: Vector2.sub(mouse_position_world, active_item.mouse_down_coord)
+                    }))
+                    set_active_item({ type: "none" });
+                } else if (active_item.type === "drag_canvas") {
+                    dispatch(actions.viewport.translate(offset_screen));
+                    set_active_item({ type: "none" });
+                } else if (active_item.type === "draw_edge_cut") {
+                    let hit_test = Vector2.line_segments_intersect(mouse_position_screen, active_item.mouse_down_position_screen);
+                    let touched_edges = edges.filter(edge => {
+                        let a = helpers.get_handel_position(edge.from, handel_refs.current, canvas_host_ref.current!);
+                        let b = helpers.get_handel_position(edge.to, handel_refs.current, canvas_host_ref.current!);
+                        let segments = handel_bezier_segments(a, b, 20);
+
+
+                        return segments.some(([a, b]) => hit_test(a, b))
+                    }).map(item => item.id);
+                    dispatch(actions.graph.remove_edges(touched_edges));
+                    set_active_item({ type: "none" });
+                
+                } else if(active_item.type==="handel_grab_end"||active_item.type==="handel_grab_start"){
+                    dispatch(actions.graph.remove_edges([
+                        active_item.edge_id
+                    ]))
+                } else {
+                    set_active_item({ type: "none" });
+                }
+            }}
+            onPointerOut={e=>{
+                // MARK: >> Host.pointerout
+                if (e.target === e.currentTarget) {
+                    set_active_item({ type: "none" });
+                }
+            }}
+            onWheel={e=>{
+                // MARK: >> Host.wheel
+                if (e.deltaY < 0) {
+                    dispatch(actions.viewport.zoom_in_to({
+                        target_screen_position: mouse_position_screen,
+                        screen_size
+                    }));
+                    set_dirty_counter(i => i + 1);
+                } else if (e.deltaY > 0) {
+                    dispatch(actions.viewport.zoom_out_from({
+                        target_screen_position: mouse_position_screen,
+                        screen_size
+                    }));
+                    set_dirty_counter(i => i + 1);
+                }
+            }}
             onContextMenu={e => { e.preventDefault() }}
         >
             <canvas
@@ -444,7 +427,11 @@ export const NCanvas: React.FC = () => {
 
                         const node_screen_position = transform.world_to_screen(node_position_world);
 
-                        const NodeType = NodeRegistry[node.registered_type];
+                        let NodeType = NodeRegistry[node.registered_type];
+                        
+                        if (NodeType === undefined){
+                            NodeType = NodeRemoved;
+                        }
 
                         return <NodeType
                             key={node.id}
@@ -459,6 +446,15 @@ export const NCanvas: React.FC = () => {
                                 font_scale: viewport.zoom,
                                 screen_position: node_screen_position,
                                 selected: selection.findIndex(item => item.type === "node" && item.id === node.id) !== -1,
+                                onClick: e=>{
+                                    if(e.button===0){
+                                        if (e.shiftKey){
+                                            dispatch(actions.graph.select_append({type:"node", id:node.id}));
+                                        }else{
+                                            dispatch(actions.graph.select_replace({type:"node", id:node.id}));
+                                        }
+                                    }
+                                },
                                 onPointerDown: e => {
                                     // MARK: Body pointer Down
                                     //e.preventDefault();
@@ -490,23 +486,26 @@ export const NCanvas: React.FC = () => {
                                             handle_type
                                         )
                                         if (result) {
-                                            if (handle_type === "output") {
+                                            if (handle_type === HandelType.output) {
                                                 set_active_item({
                                                     type: "handel_grab_start",
-                                                    start_of_edge_id: result
+                                                    edge_id: result
                                                 });
                                             } else if (handle_type === "input") {
                                                 set_active_item({
                                                     type: "handel_grab_end",
-                                                    end_of_edge_id: result
+                                                    edge_id: result
                                                 });
                                             }
+                                        }else{
+                                            set_active_item({
+                                                type: "start_edge_from_right",
+                                                source: handel_reference
+                                            })
                                         }
-                                    } else if (handle_type === "output") {
-                                        // TODO: disconnect existing?
-                                        // TODO: handel release over none
+                                    } else if (handle_type === HandelType.output) {
                                         set_active_item({
-                                            type: "handel_out_left",
+                                            type: "start_edge_from_left",
                                             source: handel_reference
                                         })
                                     }
@@ -514,16 +513,20 @@ export const NCanvas: React.FC = () => {
                             }}
                             onPointerUpHandel={(e, handel_reference, handel_type) => {
                                 // MARK: Handle Pointer Up
-                                if (active_item.type === "handel_out_left" && handel_type === "input") {
+                                if (active_item.type === "start_edge_from_left" && handel_type === "input") {
                                     e.stopPropagation()
                                     set_active_item({ type: "none" });
-                                    if (active_item.source.node_id !== handel_reference.node_id && active_item.source.handel_id !== handel_reference.handel_id) {
-                                        let new_edge = {
-                                            from: active_item.source,
-                                            to: handel_reference,
-                                        };
-                                        dispatch(actions.graph.add_edge(new_edge));
-                                    }
+                                    dispatch(actions.graph.add_edge({
+                                        from: active_item.source,
+                                        to: handel_reference,
+                                    }));
+                                }else if (active_item.type === "start_edge_from_right" && handel_type === "output") {
+                                    e.stopPropagation()
+                                    set_active_item({ type: "none" });
+                                    dispatch(actions.graph.add_edge({
+                                        from: handel_reference,
+                                        to: active_item.source,
+                                    }));
                                 }
                             }}
                         />

@@ -9,6 +9,7 @@ export type NodeBodyProps<T> = {
     font_scale: number,
     node: GraphNode<T>
     selected: boolean,
+    onClick:PointerEventHandler<HTMLDivElement>
     onPointerDown?: PointerEventHandler<HTMLDivElement>
     children?: NodeBodyChildTypes | NodeBodyChildTypes[]
 };
@@ -25,6 +26,7 @@ export const NodeBody = <T,>(props: NodeBodyProps<T>) => {
         }}
         className="absolute top-[calc(-1.2rem-4px)] left-0 rounded-md border-[2px] border-level-2 bg-level-1"
         onPointerDown={props.onPointerDown}
+        onClick={props.onClick}
         title={props.node.id}
     >
         <div className="text-[0.8rem] leading-[1.2rem]  p-[0.1rem] ps-1 pe-1 bg-brand-accent rounded-t-[3px]">{props.node.title}</div>

@@ -63,6 +63,11 @@ const graph_slice = createSlice({
             state.nodes.push(action.payload);
         },
         add_edge: (state, action: PayloadAction<Omit<GraphEdge, "id">>) => {
+
+            if (action.payload.from.node_id === action.payload.to.node_id) {
+                throw new Error("Cannot connect node with itself")
+            }
+
             // TODO: pack this nonsense into a reusable function as it will be needed for node ID assignment also
             // TODO: consider making node and edge id a simple integer to simplify this code? I don't think there is a benefit really to having the id be a number
             let limit_counter = 1000;
@@ -92,12 +97,15 @@ const graph_slice = createSlice({
                 throw new Error("Why you ask to move node that not exist eh?")
             }
         },
-        select: (state, action: PayloadAction<SelectionItem>) => {
+        select_append: (state, action: PayloadAction<SelectionItem>) => {
             if (state.selected.findIndex(item => item.type === action.payload.type && item.id === action.payload.id) === -1) {
                 state.selected.push(action.payload)
             }
         },
-        deselect: (state, action: PayloadAction<SelectionItem>) => {
+        select_replace: (state, action: PayloadAction<SelectionItem>) => {
+            state.selected = [action.payload];
+        },
+        select_remove: (state, action: PayloadAction<SelectionItem>) => {
             state.selected = state.selected.filter(item => !(item.type === action.payload.type && item.id === action.payload.id));
         },
         clear_all: (state) => {

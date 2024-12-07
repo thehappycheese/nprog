@@ -48,5 +48,18 @@ const get_handel_position = (
 
 export default {
     get_mouse_positions,
-    get_handel_position
+    get_handel_position,
+    draw_edge:(a:Vector2.Vector2, b:Vector2.Vector2, ctx:CanvasRenderingContext2D)=>{
+        let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
+        let c1 = Vector2.add(a, abx);
+        let c2 = Vector2.sub(b, abx);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.bezierCurveTo(
+            c1.x, c1.y,
+            c2.x, c2.y,
+            b.x, b.y
+        );
+        ctx.stroke()
+    }
 }
