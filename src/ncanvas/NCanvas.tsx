@@ -9,7 +9,6 @@ import { grabby_edge } from "./grabby_edge.tsx";
 import { GraphNode } from "./graph_types/GraphNode.ts";
 import { HandelReference, HandelType } from "./graph_types/HandelReference.ts";
 import helpers from "./helpers";
-import { useConstrainedNumber } from "./hooks/useConstrainedNumber";
 import { NodeRegistry } from "./graph_types/RegisteredNodeType.ts";
 import { actions, RootState } from "./store";
 import { Vector2 } from "./Vector2";
@@ -54,6 +53,9 @@ type ActiveItem = {
 } | {
     type: "draw_edge_split",
     mouse_down_position_screen: Vector2.Vector2
+} |{
+    type:"bounding_box_select",
+    mouse_down_position_screen: Vector2.Vector2
 };
 
 
@@ -63,7 +65,7 @@ export const NCanvas: React.FC = () => {
     const canvas_host_ref = useRef<HTMLDivElement | null>(null);
     const resize_observer_ref = useRef<ResizeObserver | null>(null);
 
-    const handel_refs = useRef<HandleRefRegistry>({})
+    const handel_refs = useRef<HandleRefRegistry>({}) // TODO: combine with node body location registry also
 
     const context_menu_ref = useRef<ContextMenuRef>(null);
 
@@ -98,7 +100,7 @@ export const NCanvas: React.FC = () => {
 
     const [active_item, set_active_item] = useState<ActiveItem>({ type: "none" });
 
-    const [grid_spacing, set_grid_spacing] = useConstrainedNumber(50, [5, 1000]);
+    const [grid_spacing, set_grid_spacing] = useState(50);
 
 
     // MARK: DERIVED LOCAL STATE
@@ -123,6 +125,8 @@ export const NCanvas: React.FC = () => {
                 dispatch(ActionCreators.undo())
             } else if (e.key === "y" && e.ctrlKey) {
                 dispatch(ActionCreators.redo())
+            } else if(e.key==="del"){
+                dispatch(actions.graph.remove_nodes(selection))
             }
         }
         window.addEventListener("keydown", handle_keydown)
@@ -198,7 +202,7 @@ export const NCanvas: React.FC = () => {
                     helpers.draw_edge(a,b,ctx);
                 }
 
-                // MARK: Draw dragged Edges
+                // MARK: >> Dragged Edges
                 if (active_item.type === "start_edge_from_left" || active_item.type==="start_edge_from_right") {
                     let a = helpers.get_handel_position(active_item.source, handel_refs.current, canvas_host_ref.current);
                     let b = mouse_position_screen;
@@ -210,7 +214,7 @@ export const NCanvas: React.FC = () => {
                     helpers.draw_edge(a,b, ctx);
                 }
             }
-            // MARK: Draw Cut Edges
+            // MARK: >> Cut Edges
             if (active_item.type === "draw_edge_cut" || active_item.type==="draw_edge_split") {
                 ctx.strokeStyle = "red";
                 if(active_item.type==="draw_edge_split"){
@@ -221,6 +225,16 @@ export const NCanvas: React.FC = () => {
                 ctx.moveTo(active_item.mouse_down_position_screen.x, active_item.mouse_down_position_screen.y);
                 ctx.lineTo(mouse_position_screen.x, mouse_position_screen.y);
                 ctx.stroke();
+                ctx.setLineDash([]);
+            } else if(active_item.type=="bounding_box_select"){
+                
+                let rect_size = Vector2.sub(mouse_position_screen,active_item.mouse_down_position_screen);
+                ctx.setLineDash([3,3]);
+                ctx.strokeStyle = "grey";
+                ctx.strokeRect(
+                    active_item.mouse_down_position_screen.x, active_item.mouse_down_position_screen.y,
+                    rect_size.x, rect_size.y
+                )
                 ctx.setLineDash([]);
             }
         }
@@ -273,7 +287,11 @@ export const NCanvas: React.FC = () => {
                         <div>{edges.length}</div>
                     </div>
                     <div className="grid grid-cols-2 gap-x-2 ml-3">
-                        <label>Grid Spacing</label><input type="number" value={grid_spacing}
+                        <label>Grid Spacing</label><input
+                            type="range"
+                            value={grid_spacing}
+                            min="20"
+                            max="1000"
                             onChange={e => set_grid_spacing(parseFloat(e.target.value))}
                             className="bg-level-0" />
                     </div>
@@ -327,7 +345,9 @@ export const NCanvas: React.FC = () => {
                 set_mouse_down_position_screen(mouse_position_screen);
                 set_mouse_down_position_world(mouse_position_world);
                 if (e.target === canvas_ref.current) {
-                    if (e.button === 1) {
+                    if(e.button === 0){
+                        set_active_item({ type: "bounding_box_select", mouse_down_position_screen:mouse_position_screen });
+                    }else if (e.button === 1) {
                         set_active_item({ type: "drag_canvas" });
                     } else if (e.button === 2 && e.ctrlKey) {
                         set_active_item({ type: "draw_edge_cut", mouse_down_position_screen: mouse_position_screen });
@@ -350,6 +370,13 @@ export const NCanvas: React.FC = () => {
                             y: e.clientY
                         });
                     }
+                }else if(active_item.type==="bounding_box_select"){
+                    if(Vector2.mag_squared(Vector2.sub(mouse_down_position_screen, mouse_position_screen))<2*2){
+                        dispatch(actions.graph.select_none());
+                    }else{
+                        // TODO: Complete bounding box selection
+                    }
+                    set_active_item({ type: "none" });
                 } else if (active_item.type === "drag_node") {
                     dispatch(actions.graph.offset_node({
                         id: active_item.target_id,
@@ -372,7 +399,9 @@ export const NCanvas: React.FC = () => {
                     dispatch(actions.graph.remove_edges(touched_edges));
                     set_active_item({ type: "none" });
                 
-                } else if(active_item.type==="handel_grab_end"||active_item.type==="handel_grab_start"){
+                } else if(active_item.type==="draw_edge_split"){
+                    // TODO: implement split edges
+                }else if(active_item.type==="handel_grab_end"||active_item.type==="handel_grab_start"){
                     dispatch(actions.graph.remove_edges([
                         active_item.edge_id
                     ]))
@@ -436,7 +465,7 @@ export const NCanvas: React.FC = () => {
                         return <NodeType
                             key={node.id}
                             node={node}
-                            ref={handel_refs}
+                            ref={handel_refs} // TODO: node body location refs are now also needed
                             set_node_data={new_value => dispatch(actions.graph.set_node_data({
                                 node_id: node.id,
                                 new_value
@@ -447,11 +476,14 @@ export const NCanvas: React.FC = () => {
                                 screen_position: node_screen_position,
                                 selected: selection.findIndex(item => item.type === "node" && item.id === node.id) !== -1,
                                 onClick: e=>{
-                                    if(e.button===0){
-                                        if (e.shiftKey){
-                                            dispatch(actions.graph.select_append({type:"node", id:node.id}));
-                                        }else{
-                                            dispatch(actions.graph.select_replace({type:"node", id:node.id}));
+                                    const {mouse_position_screen} = helpers.get_mouse_positions(e,transform,canvas_host_ref.current!);
+                                    if(Vector2.mag_squared(Vector2.sub(mouse_down_position_screen, mouse_position_screen))<2*2){
+                                        if(e.button===0){
+                                            if (e.shiftKey){
+                                                dispatch(actions.graph.select_toggle({type:"node", id:node.id}));
+                                            }else{
+                                                dispatch(actions.graph.select_replace({type:"node", id:node.id}));
+                                            }
                                         }
                                     }
                                 },

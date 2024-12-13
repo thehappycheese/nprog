@@ -13,11 +13,11 @@ type ActiveItem = {
 } | {
     type: "drag_node",
     target_id: string,
-    mouse_down_coord: Vector2.Vector2,
+    mouse_down_coord: Vector2,
 } | {
     type: "drag_edge",
     target_id: string,
-    mouse_down_coord: Vector2.Vector2,
+    mouse_down_coord: Vector2,
 };
 
 const initial_state: ActiveItem = {

@@ -11,9 +11,9 @@ export const query_edge_by_from = (edges: GraphEdge[]) => (from: HandelReference
 
 export const grabby_edge = (
     edges: GraphEdge[],
-    mouse_position_screen: Vector2.Vector2,
+    mouse_position_screen: Vector2,
     handel_reference: HandelReference,
-    get_handel_position: (reference: HandelReference) => Vector2.Vector2,
+    get_handel_position: (reference: HandelReference) => Vector2,
     grab_type: HandelType,
 ) => {
     let user_grabbed_edge_handles = edges.filter(

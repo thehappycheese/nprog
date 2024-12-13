@@ -89,7 +89,10 @@ const graph_slice = createSlice({
         remove_edges: (state, action: PayloadAction<string[]>) => {
             state.edges = state.edges.filter(item => !action.payload.includes(item.id))
         },
-        offset_node: (state, action: PayloadAction<{ id: string, offset: Vector2.Vector2 }>) => {
+        remove_nodes: (state, action: PayloadAction<string[]>) => {
+            state.edges = state.edges.filter(item => !action.payload.includes(item.id))
+        },
+        offset_node: (state, action: PayloadAction<{ id: string, offset: Vector2 }>) => {
             let node = state.nodes.find(item => item.id == action.payload.id);
             if (node) {
                 node.position = Vector2.add(node.position, action.payload.offset);
@@ -105,8 +108,27 @@ const graph_slice = createSlice({
         select_replace: (state, action: PayloadAction<SelectionItem>) => {
             state.selected = [action.payload];
         },
+        // select_replace_or_remove: (state, action: PayloadAction<SelectionItem>) => {
+        //     if(state.selected.find(item=>item.type===action.payload.type && item.id ===action.payload.id)){
+        //         // remove
+        //         state.selected = [];
+        //     }else{
+        //         // replace
+        //         state.selected = [action.payload];
+        //     }
+        // },
         select_remove: (state, action: PayloadAction<SelectionItem>) => {
             state.selected = state.selected.filter(item => !(item.type === action.payload.type && item.id === action.payload.id));
+        },
+        select_toggle: (state, action: PayloadAction<SelectionItem>) => {
+            if(state.selected.find(item=>item.type===action.payload.type && item.id ===action.payload.id)){
+                state.selected = state.selected.filter(item => !(item.type === action.payload.type && item.id === action.payload.id));
+            }else{
+                state.selected.push(action.payload);
+            }
+        },
+        select_none: (state) => {
+            state.selected = [];
         },
         clear_all: (state) => {
             state.nodes = []

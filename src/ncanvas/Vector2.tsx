@@ -1,77 +1,98 @@
-/* eslint-disable @typescript-eslint/no-namespace */
-export namespace Vector2 {
 
-    export interface Vector2 {
-        x: number;
-        y: number;
-    }
+export interface Vector2 {
+    x: number;
+    y: number;
+}
 
-    export function toString(v: Vector2): string {
+export const Vector2 = {
+    toString(v: Vector2): string {
         return `{${v.x.toFixed(1)}, ${v.y.toFixed(1)}}`;
-    }
-    export function add(a: Vector2, b: Vector2): Vector2 {
+    },
+    add(a: Vector2, b: Vector2): Vector2 {
         return { x: a.x + b.x, y: a.y + b.y };
-    }
-    export function sub(a: Vector2, b: Vector2): Vector2 {
+    },
+    sub(a: Vector2, b: Vector2): Vector2 {
         return { x: a.x - b.x, y: a.y - b.y };
-    }
-    export function neg(a: Vector2): Vector2 {
+    },
+    neg(a: Vector2): Vector2 {
         return { x: -a.x, y: -a.y };
-    }
-    export function scale(a: Vector2, multiplier: number): Vector2 {
+    },
+    scale(a: Vector2, multiplier: number): Vector2 {
         return { x: a.x * multiplier, y: a.y * multiplier };
-    }
-    export function descale(a: Vector2, divisor: number): Vector2 {
+    },
+    descale(a: Vector2, divisor: number): Vector2 {
         return { x: a.x / divisor, y: a.y / divisor };
-    }
-    export function left(a: Vector2): Vector2 {
+    },
+    left(a: Vector2): Vector2 {
         return { x: -a.y, y: a.x };
-    }
-    export function unit(a: Vector2): Vector2 {
+    },
+    unit(a: Vector2): Vector2 {
         const mag = Math.sqrt(a.x * a.x + a.y * a.y);
         return {
             x: a.x / mag,
             y: a.y / mag,
         }
-    }
-
-    export function cross(a: Vector2, b: Vector2): number {
+    },
+    eq(a:Vector2, b:Vector2){
+        return a.x===b.x && a.y===b.y;
+    },
+    is_rounded(a:Vector2){
+        return Vector2.eq(a, Vector2.round(a));
+    },
+    from(arr:[number,number]):Vector2{
+        return {
+            x:arr[0],
+            y:arr[1],
+        }
+    },
+    cross(a: Vector2, b: Vector2): number {
         return a.x * b.y - a.y * b.x;
-    }
-
-    export function mag_squared(a: Vector2): number {
+    },
+    mag_squared(a: Vector2): number {
         return Math.sqrt(a.x * a.x + a.y * a.y);
-    }
-
-    export const lerp = (a: Vector2, b: Vector2, t: number): Vector2 => ({
-        x: a.x + (b.x - a.x) * t,
-        y: a.y + (b.y - a.y) * t,
-    });
-
-    export function sum(items: Vector2[]) {
+    },
+    lerp(a: Vector2, b: Vector2, t: number): Vector2 {
+        return {
+            x: a.x + (b.x - a.x) * t,
+            y: a.y + (b.y - a.y) * t,
+        }
+    },
+    sum(items: Vector2[]) {
         return items.reduce((cur, acc) => ({ x: cur.x + acc.x, y: cur.y + cur.y }));
-    }
-
-    export const inside_rect = (test_position: Vector2) => (rect_position: Vector2, rect_size: Vector2) => {
-        let relative_test_position = sub(test_position, rect_position);
+    },
+    round(a:Vector2) {
+        return {
+            x:Math.round(a.x),
+            y:Math.round(a.y),
+        }
+    },
+    inside_rect: (test_position: Vector2) => (rect_position: Vector2, rect_size: Vector2) => {
+        const relative_test_position = Vector2.sub(test_position, rect_position);
         return (
             relative_test_position.x >= 0
             && relative_test_position.y >= 0
             && relative_test_position.x < rect_size.x
             && relative_test_position.y < rect_size.y
         )
-    }
-
-    export const line_segments_intersect = (a: Vector2, b: Vector2) => {
-        const ab = sub(b, a);
+    },
+    line_segments_intersect (a: Vector2, b: Vector2) {
+        const ab = Vector2.sub(b, a);
         return (c: Vector2, d: Vector2) => {
-            const cd = sub(d, c);
-            const ac = sub(c, a);
-            const cabcd = cross(ab, cd)
-            const t1 = cross(ac, cd) / cabcd;
-            const t2 = -cross(ac, ab) / cabcd;
+            const cd = Vector2.sub(d, c);
+            const ac = Vector2.sub(c, a);
+            const cabcd = Vector2.cross(ab, cd)
+            const t1 = Vector2.cross(ac, cd) / cabcd;
+            const t2 = -Vector2.cross(ac, ab) / cabcd;
             return t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1;
         }
+    },
+    to_string:(v:Vector2)=>{
+        return (
+            `┌${v.x}┐\n`
+           +`└${v.y}┘`
+       )
+    },
+    log(v:Vector2){
+        console.log(Vector2.to_string(v))
     }
 }
-
