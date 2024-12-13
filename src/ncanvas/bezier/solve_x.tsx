@@ -1,6 +1,6 @@
 import { Vector2 } from "../Vector2";
 
-export function solve_x(x_line: number, f: (t: number) => Vector2.Vector2, tolerance: number = 1e-3): { t: number; y: number; } | null {
+export function solve_x(x_line: number, f: (t: number) => Vector2, tolerance: number = 1e-3): { t: number; y: number; } | null {
     let t_min = 0; // Start of the range
     let t_max = 1; // End of the range
 

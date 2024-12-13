@@ -2,7 +2,7 @@ import { forwardRef, useState } from "react"
 import { Vector2 } from "../Vector2"
 
 export type ContextMenuRef = {
-    open_at: (position: Vector2.Vector2) => void;
+    open_at: (position: Vector2) => void;
     close: () => void;
 }
 
@@ -10,14 +10,14 @@ export const ContextMenu: React.ForwardRefExoticComponent<{
     children: React.ReactNode;
 } & React.RefAttributes<ContextMenuRef>> = forwardRef(({ children }, ref) => {
     const [is_open, set_open] = useState(false);
-    const [position, set_position] = useState<Vector2.Vector2>({ x: 0, y: 0 })
+    const [position, set_position] = useState<Vector2>({ x: 0, y: 0 })
 
     if (typeof ref === "function") {
         throw new Error("don't know how to handle yet...")
     } else if (ref !== null) {
         //ref(ref => ref.current = { x: "hey" });
         ref.current = {
-            open_at: (position: Vector2.Vector2) => {
+            open_at: (position: Vector2) => {
                 set_open(true);
                 set_position(position);
             },

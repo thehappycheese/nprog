@@ -30,11 +30,11 @@ type ActiveItem = {
 } | {
     type: "drag_node",
     target_id: string,
-    mouse_down_coord: Vector2.Vector2,
+    mouse_down_coord: Vector2,
 } | {
     type: "drag_edge",
     target_id: string,
-    mouse_down_coord: Vector2.Vector2,
+    mouse_down_coord: Vector2,
 } | {
     type: "start_edge_from_left",
     source: HandelReference
@@ -49,13 +49,13 @@ type ActiveItem = {
     edge_id: string
 } | {
     type: "draw_edge_cut",
-    mouse_down_position_screen: Vector2.Vector2
+    mouse_down_position_screen: Vector2
 } | {
     type: "draw_edge_split",
-    mouse_down_position_screen: Vector2.Vector2
+    mouse_down_position_screen: Vector2
 } |{
     type:"bounding_box_select",
-    mouse_down_position_screen: Vector2.Vector2
+    mouse_down_position_screen: Vector2
 };
 
 
@@ -71,7 +71,7 @@ export const NCanvas: React.FC = () => {
 
     // MARK: DERIVED FROM REFS
 
-    const screen_size: Vector2.Vector2 = (
+    const screen_size: Vector2 = (
         canvas_ref.current
             ? { x: canvas_ref.current.width, y: canvas_ref.current.height }
             : { x: 1, y: 1 }
@@ -92,10 +92,10 @@ export const NCanvas: React.FC = () => {
     // MARK: LOCAL STATE
     const [dirty_counter, set_dirty_counter] = useState(Number.MIN_SAFE_INTEGER);
 
-    const [mouse_position_screen, set_mouse_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
-    const [mouse_position_world, set_mouse_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
-    const [mouse_down_position_world, set_mouse_down_position_world] = useState<Vector2.Vector2>({ x: 0, y: 0 });
-    const [mouse_down_position_screen, set_mouse_down_position_screen] = useState<Vector2.Vector2>({ x: 0, y: 0 });
+    const [mouse_position_screen, set_mouse_position_screen] = useState<Vector2>({ x: 0, y: 0 });
+    const [mouse_position_world, set_mouse_position_world] = useState<Vector2>({ x: 0, y: 0 });
+    const [mouse_down_position_world, set_mouse_down_position_world] = useState<Vector2>({ x: 0, y: 0 });
+    const [mouse_down_position_screen, set_mouse_down_position_screen] = useState<Vector2>({ x: 0, y: 0 });
     const [mouse_down, set_mouse_down] = useState(false);
 
     const [active_item, set_active_item] = useState<ActiveItem>({ type: "none" });

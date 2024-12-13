@@ -1,6 +1,6 @@
 import { Vector2 } from "../Vector2";
 
-export const handel_bezier = (p0: Vector2.Vector2, p3: Vector2.Vector2, t: number): Vector2.Vector2 => {
+export const handel_bezier = (p0: Vector2, p3: Vector2, t: number): Vector2 => {
     let abx = Vector2.scale({ x: Math.abs(p3.x - p0.x), y: 0 }, 0.5);
     let p1 = Vector2.add(p0, abx);
     let p2 = Vector2.sub(p3, abx);
@@ -15,8 +15,8 @@ export const handel_bezier = (p0: Vector2.Vector2, p3: Vector2.Vector2, t: numbe
     return Vector2.lerp(r0, r1, t);
 }
 
-export const handel_bezier_segments = (p0: Vector2.Vector2, p3: Vector2.Vector2, number_of_segments: number = 30): [Vector2.Vector2, Vector2.Vector2][] => {
-    let result: [Vector2.Vector2, Vector2.Vector2][] = [];
+export const handel_bezier_segments = (p0: Vector2, p3: Vector2, number_of_segments: number = 30): [Vector2, Vector2][] => {
+    let result: [Vector2, Vector2][] = [];
     for (let i = 1; i < number_of_segments; i++) {
         const t0 = (i - 1) / (number_of_segments - 1);
         const t1 = i / (number_of_segments - 1);

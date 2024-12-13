@@ -14,8 +14,8 @@ const get_mouse_positions: (
     transform: ViewportTransform,
     reference_element: HTMLElement
 ) => {
-    mouse_position_screen: Vector2.Vector2,
-    mouse_position_world: Vector2.Vector2
+    mouse_position_screen: Vector2,
+    mouse_position_world: Vector2
 } = (event, transform, reference_element) => {
     const canvas_rect = reference_element.getBoundingClientRect();
     let mouse_position_screen = {
@@ -39,7 +39,7 @@ const get_handel_position = (
         console.error(`Invalid Handle Reference: ${JSON.stringify(handel_reference)}`)
         return { x: 0, y: 0 };
     }
-    let handel_position: Vector2.Vector2 = {
+    let handel_position: Vector2 = {
         x: handel_rect.left + handel_rect.width / 2 - host_rect.left,
         y: handel_rect.top + handel_rect.height / 2 - host_rect.top,
     };
@@ -49,7 +49,7 @@ const get_handel_position = (
 export default {
     get_mouse_positions,
     get_handel_position,
-    draw_edge:(a:Vector2.Vector2, b:Vector2.Vector2, ctx:CanvasRenderingContext2D)=>{
+    draw_edge:(a:Vector2, b:Vector2, ctx:CanvasRenderingContext2D)=>{
         let abx = Vector2.scale({ x: Math.abs(b.x - a.x), y: 0 }, 0.5);
         let c1 = Vector2.add(a, abx);
         let c2 = Vector2.sub(b, abx);

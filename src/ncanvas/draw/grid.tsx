@@ -105,8 +105,8 @@ export function draw_grid(
  */
 function arrow_head(
     ctx: CanvasRenderingContext2D,
-    position: Vector2.Vector2,
-    direction_unit: Vector2.Vector2,
+    position: Vector2,
+    direction_unit: Vector2,
     width: number = 8,
     length: number = 10
 ) {

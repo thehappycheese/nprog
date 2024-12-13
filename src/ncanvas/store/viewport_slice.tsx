@@ -3,7 +3,7 @@ import { ViewportTransform } from '../ViewportTransform';
 import { Vector2 } from '../Vector2';
 
 export interface Viewport {
-    midpoint: Vector2.Vector2,
+    midpoint: Vector2,
     zoom: number
 };
 
@@ -68,7 +68,7 @@ const graph_slice = createSlice({
                 midpoint: { x: 0, y: 0 }
             }
         },
-        zoom_in_to: (state, action: PayloadAction<{ target_screen_position: Vector2.Vector2, screen_size: Vector2.Vector2 }>) => {
+        zoom_in_to: (state, action: PayloadAction<{ target_screen_position: Vector2, screen_size: Vector2 }>) => {
             let {
                 target_screen_position,
                 screen_size,
@@ -84,7 +84,7 @@ const graph_slice = createSlice({
                 new_zoom
             ).as_viewport();
         },
-        zoom_out_from: (state, action: PayloadAction<{ target_screen_position: Vector2.Vector2, screen_size: Vector2.Vector2 }>) => {
+        zoom_out_from: (state, action: PayloadAction<{ target_screen_position: Vector2, screen_size: Vector2 }>) => {
             let {
                 target_screen_position,
                 screen_size,
@@ -99,7 +99,7 @@ const graph_slice = createSlice({
                 new_zoom
             ).as_viewport();
         },
-        translate: (state, action: PayloadAction<Vector2.Vector2>) => {
+        translate: (state, action: PayloadAction<Vector2>) => {
             state.midpoint = Vector2.add(state.midpoint, action.payload)
         },
     },

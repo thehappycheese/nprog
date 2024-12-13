@@ -5,7 +5,7 @@ import { GraphNode } from "../../graph_types/GraphNode.ts";
 
 
 export type NodeBodyProps<T> = {
-    screen_position: Vector2.Vector2,
+    screen_position: Vector2,
     font_scale: number,
     node: GraphNode<T>
     selected: boolean,
