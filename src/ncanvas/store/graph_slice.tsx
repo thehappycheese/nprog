@@ -90,7 +90,9 @@ const graph_slice = createSlice({
             state.edges = state.edges.filter(item => !action.payload.includes(item.id))
         },
         remove_nodes: (state, action: PayloadAction<string[]>) => {
-            state.edges = state.edges.filter(item => !action.payload.includes(item.id))
+            const node_ids_to_remove = new Set(action.payload);
+            state.edges = state.edges.filter(edge=> !(node_ids_to_remove.has(edge.from.node_id) || node_ids_to_remove.has(edge.to.node_id)));
+            state.nodes = state.nodes.filter(item => !node_ids_to_remove.has(item.id));
         },
         offset_node: (state, action: PayloadAction<{ id: string, offset: Vector2 }>) => {
             let node = state.nodes.find(item => item.id == action.payload.id);

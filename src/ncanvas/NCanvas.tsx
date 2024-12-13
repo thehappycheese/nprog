@@ -58,6 +58,17 @@ type ActiveItem = {
     mouse_down_position_screen: Vector2
 };
 
+/**
+ * ```typescript
+ * // Always use it like this:
+ * screen_size(canvas_ref)
+ * ```
+*/
+const screen_size = (canvas_ref:React.MutableRefObject<HTMLCanvasElement | null>) => (
+    canvas_ref.current
+    ? { x: canvas_ref.current.width, y: canvas_ref.current.height }
+    : { x: 1, y: 1 }
+);
 
 export const NCanvas: React.FC = () => {
     // MARK: DOM REFS
@@ -70,12 +81,6 @@ export const NCanvas: React.FC = () => {
     const context_menu_ref = useRef<ContextMenuRef>(null);
 
     // MARK: DERIVED FROM REFS
-
-    const screen_size: Vector2 = (
-        canvas_ref.current
-            ? { x: canvas_ref.current.width, y: canvas_ref.current.height }
-            : { x: 1, y: 1 }
-    );
 
     // MARK: REDUX STATE
     const dispatch = useDispatch();
@@ -115,8 +120,8 @@ export const NCanvas: React.FC = () => {
                 ? Vector2.add(viewport.midpoint, offset_screen)
                 : viewport.midpoint
         ),
-        screen_size
-    ), [active_item, mouse_down, viewport, offset_screen, screen_size]);
+        screen_size(canvas_ref)
+    ), [active_item, mouse_down, viewport, offset_screen]);
 
     // MARK: GLOBAL EVENTS
     useEffect(() => {
@@ -125,15 +130,15 @@ export const NCanvas: React.FC = () => {
                 dispatch(ActionCreators.undo())
             } else if (e.key === "y" && e.ctrlKey) {
                 dispatch(ActionCreators.redo())
-            } else if(e.key==="del"){
-                dispatch(actions.graph.remove_nodes(selection))
+            } else if(e.key==="Delete"){
+                dispatch(actions.graph.remove_nodes(selection.filter(i=>i.type==="node").map(i=>i.id)))
             }
         }
         window.addEventListener("keydown", handle_keydown)
         return () => {
             window.removeEventListener("keydown", handle_keydown);
         }
-    }, [dispatch]);
+    }, [dispatch, selection]);
 
     // MARK: RESIZE CALLBACK
     const canvas_resize_callback = useCallback((canvas_host: HTMLDivElement | null) => {
@@ -345,15 +350,15 @@ export const NCanvas: React.FC = () => {
                 set_mouse_down_position_screen(mouse_position_screen);
                 set_mouse_down_position_world(mouse_position_world);
                 if (e.target === canvas_ref.current) {
-                    if(e.button === 0){
+                    if (e.button === 0 && e.shiftKey) {
+                        set_active_item({ type: "draw_edge_split", mouse_down_position_screen: mouse_position_screen });
+                    }else if(e.button === 0){
                         set_active_item({ type: "bounding_box_select", mouse_down_position_screen:mouse_position_screen });
                     }else if (e.button === 1) {
                         set_active_item({ type: "drag_canvas" });
                     } else if (e.button === 2 && e.ctrlKey) {
                         set_active_item({ type: "draw_edge_cut", mouse_down_position_screen: mouse_position_screen });
-                    }else if (e.button === 2 && e.shiftKey) {
-                        set_active_item({ type: "draw_edge_split", mouse_down_position_screen: mouse_position_screen });
-                    }
+                    } 
                 }
             }}
             onPointerUp={e=>{
@@ -401,10 +406,12 @@ export const NCanvas: React.FC = () => {
                 
                 } else if(active_item.type==="draw_edge_split"){
                     // TODO: implement split edges
+                    set_active_item({ type: "none" });
                 }else if(active_item.type==="handel_grab_end"||active_item.type==="handel_grab_start"){
                     dispatch(actions.graph.remove_edges([
                         active_item.edge_id
                     ]))
+                    set_active_item({ type: "none" });
                 } else {
                     set_active_item({ type: "none" });
                 }
@@ -420,13 +427,13 @@ export const NCanvas: React.FC = () => {
                 if (e.deltaY < 0) {
                     dispatch(actions.viewport.zoom_in_to({
                         target_screen_position: mouse_position_screen,
-                        screen_size
+                        screen_size:screen_size(canvas_ref)
                     }));
                     set_dirty_counter(i => i + 1);
                 } else if (e.deltaY > 0) {
                     dispatch(actions.viewport.zoom_out_from({
                         target_screen_position: mouse_position_screen,
-                        screen_size
+                        screen_size:screen_size(canvas_ref)
                     }));
                     set_dirty_counter(i => i + 1);
                 }
