@@ -29,7 +29,7 @@ type ActiveItem = {
     target_id: string
 } | {
     type: "drag_node",
-    target_id: string,
+    target_ids: string[],
     mouse_down_coord: Vector2,
 } | {
     type: "drag_edge",
@@ -38,7 +38,7 @@ type ActiveItem = {
 } | {
     type: "start_edge_from_left",
     source: HandelReference
-}|{
+} | {
     type: "start_edge_from_right",
     source: HandelReference
 } | {
@@ -48,12 +48,12 @@ type ActiveItem = {
     type: "handel_grab_end",
     edge_id: string
 } | {
-    type: "draw_edge_cut",
+    type: "draw_edge_cut", 
     mouse_down_position_screen: Vector2
 } | {
     type: "draw_edge_split",
     mouse_down_position_screen: Vector2
-} |{
+} | {
     type:"bounding_box_select",
     mouse_down_position_screen: Vector2
 };
@@ -132,13 +132,24 @@ export const NCanvas: React.FC = () => {
                 dispatch(ActionCreators.redo())
             } else if(e.key==="Delete"){
                 dispatch(actions.graph.remove_nodes(selection.filter(i=>i.type==="node").map(i=>i.id)))
+            } else if(e.key==="D" && e.shiftKey){
+                if(selection.length>0){
+                    const id_map = Object.fromEntries(selection.filter(item=>item.type==="node").map(item=>[item.id, Math.random()+"TODODUP"]))
+                    // TODO: what if this fails?
+                    dispatch(actions.graph.duplicate_nodes(id_map));
+                    set_active_item({
+                        type:"drag_node",
+                        target_ids:[...Object.values(id_map)],
+                        mouse_down_coord:mouse_position_world
+                    })
+                }
             }
         }
         window.addEventListener("keydown", handle_keydown)
         return () => {
             window.removeEventListener("keydown", handle_keydown);
         }
-    }, [dispatch, selection]);
+    }, [dispatch, selection, mouse_position_world]);
 
     // MARK: RESIZE CALLBACK
     const canvas_resize_callback = useCallback((canvas_host: HTMLDivElement | null) => {
@@ -350,6 +361,14 @@ export const NCanvas: React.FC = () => {
                 set_mouse_down_position_screen(mouse_position_screen);
                 set_mouse_down_position_world(mouse_position_world);
                 if (e.target === canvas_ref.current) {
+                    if (active_item.type==="drag_node"){
+                        // dispatch(actions.graph.offset_nodes({
+                        //     ids: active_item.target_ids,
+                        //     offset: Vector2.sub(mouse_position_world, active_item.mouse_down_coord)
+                        // }))
+                        // set_active_item({ type: "none" });
+                        return
+                    }
                     if (e.button === 0 && e.shiftKey) {
                         set_active_item({ type: "draw_edge_split", mouse_down_position_screen: mouse_position_screen });
                     }else if(e.button === 0){
@@ -383,8 +402,8 @@ export const NCanvas: React.FC = () => {
                     }
                     set_active_item({ type: "none" });
                 } else if (active_item.type === "drag_node") {
-                    dispatch(actions.graph.offset_node({
-                        id: active_item.target_id,
+                    dispatch(actions.graph.offset_nodes({
+                        ids: active_item.target_ids,
                         offset: Vector2.sub(mouse_position_world, active_item.mouse_down_coord)
                     }))
                     set_active_item({ type: "none" });
@@ -413,7 +432,7 @@ export const NCanvas: React.FC = () => {
                     ]))
                     set_active_item({ type: "none" });
                 } else {
-                    set_active_item({ type: "none" });
+                    throw new Error("Unhandled Active Item")
                 }
             }}
             onPointerOut={e=>{
@@ -451,7 +470,7 @@ export const NCanvas: React.FC = () => {
 
                         let node_position_world = node.position;
 
-                        if (active_item.type === "drag_node" && active_item.target_id === node.id) {
+                        if (active_item.type === "drag_node" && active_item.target_ids.some(id=>id === node.id)) {
                             node_position_world = Vector2.add(
                                 node.position,
                                 Vector2.sub(
@@ -500,7 +519,7 @@ export const NCanvas: React.FC = () => {
                                     let { mouse_position_world } = helpers.get_mouse_positions(e, transform, canvas_host_ref.current!);
                                     set_active_item({
                                         type: "drag_node",
-                                        target_id: node.id,
+                                        target_ids: [node.id],
                                         mouse_down_coord: mouse_position_world
                                     })
                                 }

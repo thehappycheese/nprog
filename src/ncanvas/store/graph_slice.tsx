@@ -94,13 +94,15 @@ const graph_slice = createSlice({
             state.edges = state.edges.filter(edge=> !(node_ids_to_remove.has(edge.from.node_id) || node_ids_to_remove.has(edge.to.node_id)));
             state.nodes = state.nodes.filter(item => !node_ids_to_remove.has(item.id));
         },
-        offset_node: (state, action: PayloadAction<{ id: string, offset: Vector2 }>) => {
-            let node = state.nodes.find(item => item.id == action.payload.id);
-            if (node) {
-                node.position = Vector2.add(node.position, action.payload.offset);
-            } else {
-                throw new Error("Why you ask to move node that not exist eh?")
-            }
+        offset_nodes: (state, action: PayloadAction<{ ids: string[], offset: Vector2 }>) => {
+            action.payload.ids.forEach(node_id=>{
+                let node = state.nodes.find(item => item.id == node_id);
+                if (node) {
+                    node.position = Vector2.add(node.position, action.payload.offset);
+                } else {
+                    throw new Error("Why you ask to move node that not exist eh?")
+                }
+            })
         },
         select_append: (state, action: PayloadAction<SelectionItem>) => {
             if (state.selected.findIndex(item => item.type === action.payload.type && item.id === action.payload.id) === -1) {
@@ -109,6 +111,34 @@ const graph_slice = createSlice({
         },
         select_replace: (state, action: PayloadAction<SelectionItem>) => {
             state.selected = [action.payload];
+        },
+        duplicate_nodes: (state, action:PayloadAction<Record<string, string>>)=>{
+            let nodes_to_dupe = state.nodes.filter(node=>node.id in action.payload);
+            let edges_to_dupe = state.edges.filter(edge=>nodes_to_dupe.some(node=>node.id===edge.from.node_id) && nodes_to_dupe.some(node=>node.id===edge.to.node_id));
+            
+            const new_nodes:GraphNode<unknown>[] = nodes_to_dupe.map(old_node=>({
+                id:action.payload[old_node.id]!, // TODO
+                title:old_node.title,
+                position:old_node.position,
+                registered_type:old_node.registered_type,
+                data:old_node.data,
+            }));
+            const new_edges:GraphEdge[] = edges_to_dupe.map(old_edge=>{
+                return {
+                    from:{
+                        handel_id:old_edge.from.handel_id,
+                        node_id:action.payload[old_edge.from.node_id]!
+                    },
+                    to:{
+                        handel_id:old_edge.to.handel_id,
+                        node_id:action.payload[old_edge.to.node_id]!
+                    },
+                    id:Math.random()*3+"TODO",
+                } as GraphEdge
+            });
+            state.nodes.push(...new_nodes);
+            state.edges.push(...new_edges);
+            state.selected = new_nodes.map(item=>({type:"node", id:item.id}))
         },
         // select_replace_or_remove: (state, action: PayloadAction<SelectionItem>) => {
         //     if(state.selected.find(item=>item.type===action.payload.type && item.id ===action.payload.id)){
