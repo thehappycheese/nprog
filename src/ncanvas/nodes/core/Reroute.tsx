@@ -6,6 +6,9 @@ import { HandelType } from "../../graph_types/HandelReference";
 import { Vector2 } from "../../Vector2";
 import { ensureMutableRef } from "../ensureMutableRef";
 
+// TODO: ok so this neeeeds to use NodeBody, and node body needs to get split up
+//       and also this neeeeds to become a registered node type. 
+//       unless the handlers for clicking implemented in NCanvas neeeed to be significantly different... and i dont think they diddly do.
 export const Reroute = forwardRef((
         props: {
             node_id:string,
