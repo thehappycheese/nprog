@@ -1,15 +1,8 @@
-import { forwardRef, ForwardedRef, PointerEvent } from "react";
+import { forwardRef, ForwardedRef } from "react";
 import { HandelReference, HandelType } from "../../graph_types/HandelReference.ts";
-
-export type PointerHandelHandler = (e: PointerEvent<HTMLDivElement>, handel_reference: HandelReference, handel_type: HandelType) => void;
-
-
-export type HandleRefRegistry = {
-    [node_id:string]:{
-        [handel_id:string]:HTMLDivElement
-    }
-}
-
+import { PointerHandelHandler } from "./PointerHandelHandler.tsx";
+import { HandleRefRegistry } from "./HandleRefRegistry.tsx";
+import { ensureMutableRef } from "../ensureMutableRef.tsx";
 
 export const Handle = forwardRef((props: {
     background_color: string;
@@ -25,21 +18,13 @@ export const Handle = forwardRef((props: {
     let height = 0.8;
     return <div
         ref={handel_div=>{
-            if(ref ===null){
-                return;
-            }else if (typeof ref === "function") {
-                // TODO: unhandled
-                throw new Error("Not sure how to handel this callback ref");
-            } else {
-                ref.current = {
-                    // TODO: I don't think it is necessary to perform this assignment immutably since this is a ref.
-                    ...(ref.current ?? {}),
-                    [props.node_id]: {
-                        ...(ref?.current?.[props.node_id] ?? {}),
-                        ...(handel_div ? { [props.handel_id]: handel_div } : {})
-                    }
-                };
-            }
+            if(handel_div===null) return;
+            ensureMutableRef(ref)
+            ref.current[props.node_id] = ref.current[props.node_id] ?? {
+                handles: {[props.handel_id]:handel_div},
+                node_div: null 
+            };
+            ref.current[props.node_id].handles[props.handel_id] = handel_div;
         }}
         style={{
             padding: `${hit_box_padding}rem`,
@@ -63,6 +48,7 @@ export const Handle = forwardRef((props: {
                 height: `${height}rem`,
                 borderRadius: `${Math.min(width, height) / 2}rem`,
             }}
-            className="inner-handle bg-level-1 border-[2px] border-level-2 group-hover:bg-white" ></div>
+            className="inner-handle bg-level-1 border-[2px] border-level-2 group-hover:bg-white"
+        ></div>
     </div>;
 });

@@ -1,7 +1,7 @@
-
 export enum HandelType {
     input = "input",
     output = "output",
+    reroute = "reroute",
 }
 
 export interface HandelReference {
@@ -9,5 +9,7 @@ export interface HandelReference {
     handel_id: string;
 }
 
-export const HandelReference_compare = (a: HandelReference, b: HandelReference) =>
-    (a.node_id === b.node_id) && (a.handel_id === b.handel_id);
+export const HandelReference_compare = (
+    a: HandelReference,
+    b: HandelReference,
+) => (a.node_id === b.node_id) && (a.handel_id === b.handel_id);

@@ -1,14 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { GraphNode } from "../graph_types/GraphNode.ts";
+import { GraphItemType, GraphNode, GraphReroute } from "../graph_types/GraphNode.ts";
 import { GraphEdge } from "../graph_types/GraphEdge.ts";
 import { Vector2 } from '../Vector2';
 
 
+export type GraphItem<T=unknown> = GraphNode<T> | GraphReroute;
+
 export interface GraphState {
     _id_counter: number,
-    nodes: Array<GraphNode<unknown>>;
-    edges: Array<GraphEdge>;
-    selected: Array<SelectionItem>
+    nodes: GraphItem[];
+    edges: GraphEdge[];
+    selected: SelectionItem[];
 }
 
 export interface SelectionItem {
@@ -20,6 +22,7 @@ const initial_state: GraphState = {
     _id_counter: 0,
     nodes: [
         {
+            type:GraphItemType.NODE,
             id: "node-0",
             title: "Tau",
             position: { x: -85, y: 81 },
@@ -27,6 +30,7 @@ const initial_state: GraphState = {
             data: null,
         },
         {
+            type:GraphItemType.NODE,
             id: "node-1",
             title: "Value",
             position: { x: -166, y: 7 },
@@ -34,6 +38,7 @@ const initial_state: GraphState = {
             data: 0,
         },
         {
+            type:GraphItemType.NODE,
             id: "node-2",
             title: "Output",
             position: { x: 174, y: 114 },
@@ -41,13 +46,19 @@ const initial_state: GraphState = {
             data: null,
         },
         {
+            type:GraphItemType.NODE,
             id: "node-3",
             title: "Add",
             position: { x: 37, y: 51 },
             registered_type: "add",
             data: null,
         },
-
+        {
+            type:GraphItemType.REROUTE,
+            id:"RR0",
+            position:{x:300,y:30},
+            title:"",
+        }
     ],
     edges: [
 
@@ -113,16 +124,28 @@ const graph_slice = createSlice({
             state.selected = [action.payload];
         },
         duplicate_nodes: (state, action:PayloadAction<Record<string, string>>)=>{
+            // TODO: user must provide a pre-calculated map of changes to node ids. Maybe thats good actually?
             let nodes_to_dupe = state.nodes.filter(node=>node.id in action.payload);
             let edges_to_dupe = state.edges.filter(edge=>nodes_to_dupe.some(node=>node.id===edge.from.node_id) && nodes_to_dupe.some(node=>node.id===edge.to.node_id));
             
-            const new_nodes:GraphNode<unknown>[] = nodes_to_dupe.map(old_node=>({
-                id:action.payload[old_node.id]!, // TODO
-                title:old_node.title,
-                position:old_node.position,
-                registered_type:old_node.registered_type,
-                data:old_node.data,
-            }));
+            const new_nodes:GraphItem[] = nodes_to_dupe.map(old_node=>{
+                switch(old_node.type){
+                    case GraphItemType.NODE:
+                        return {
+                            type:GraphItemType.NODE,
+                            id:action.payload[old_node.id]!,
+                            title:old_node.title,
+                            position:old_node.position,
+                            registered_type:old_node.registered_type,
+                            data:old_node.data,
+                        } as GraphNode<unknown>
+                    case GraphItemType.REROUTE:
+                        return {
+                            ...old_node,
+                            id:action.payload[old_node.id],
+                        } as GraphReroute
+                }
+            });
             const new_edges:GraphEdge[] = edges_to_dupe.map(old_edge=>{
                 return {
                     from:{
@@ -168,7 +191,11 @@ const graph_slice = createSlice({
             state.selected = []
         },
         set_node_data: (state, action: PayloadAction<{ node_id: string, new_value: unknown }>) => {
-            state.nodes.filter(node => node.id == action.payload.node_id).map(item => item.data = action.payload.new_value);
+            state.nodes.filter(node => node.id == action.payload.node_id).forEach(node => {
+                if(node.type===GraphItemType.NODE) {
+                    node.data = action.payload.new_value
+                }
+            })
         }
     },
 });

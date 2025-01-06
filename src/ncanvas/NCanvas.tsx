@@ -6,7 +6,7 @@ import ModalDialog from "./components/ModalDialog.tsx";
 import { NJson } from "./components/NJson.tsx";
 import { draw_grid } from "./draw/grid";
 import { grabby_edge } from "./grabby_edge.tsx";
-import { GraphNode } from "./graph_types/GraphNode.ts";
+import { GraphItemType, GraphNode } from "./graph_types/GraphNode.ts";
 import { HandelReference, HandelType } from "./graph_types/HandelReference.ts";
 import helpers from "./helpers";
 import { NodeRegistry } from "./graph_types/RegisteredNodeType.ts";
@@ -16,8 +16,9 @@ import { ViewportTransform } from "./ViewportTransform";
 import { handel_bezier_segments } from "./bezier/handel_bezier.tsx";
 import { HelpControls } from "./components/HelpControls.tsx";
 import { ContextMenu, ContextMenuRef } from "./components/ContextMenu.tsx";
-import { HandleRefRegistry } from "./nodes/core/Handel.tsx";
+import { HandleRefRegistry } from "./nodes/core/HandleRefRegistry.tsx";
 import { NodeRemoved } from "./nodes/NodeRemoved.tsx";
+import { Reroute } from "./nodes/core/Reroute.tsx";
 
 // MARK: type ActiveItem
 type ActiveItem = {
@@ -181,7 +182,6 @@ export const NCanvas: React.FC = () => {
     }, [set_dirty_counter]);
 
     // MARK: CANVAS RENDER
-    // TODO: consider switching back to useLayoutEffect
     useLayoutEffect(() => {
         if (canvas_ref.current) {
             const canvas = canvas_ref.current;
@@ -264,6 +264,7 @@ export const NCanvas: React.FC = () => {
                 <button
                     onClick={()=>{
                         dispatch(actions.graph.add_node({
+                            "type":GraphItemType.NODE,
                             "title":"New Node!",
                             "registered_type":"add",
                             "data":null,
@@ -317,6 +318,7 @@ export const NCanvas: React.FC = () => {
             <button className="btn" onClick={() => dispatch(ActionCreators.redo())}>Redo</button>
             <button className="btn" onClick={() => {
                 const newNode: GraphNode<null> = {
+                    type:GraphItemType.NODE,
                     id: `node-${nodes.length + 1}`,
                     title: 'New Node',
                     position: mouse_position_screen,
@@ -432,6 +434,7 @@ export const NCanvas: React.FC = () => {
                     ]))
                     set_active_item({ type: "none" });
                 } else {
+                    set_active_item({ type: "none" });
                     throw new Error("Unhandled Active Item")
                 }
             }}
@@ -468,6 +471,8 @@ export const NCanvas: React.FC = () => {
                 (() => {
                     return nodes.map(node => {
 
+                        
+
                         let node_position_world = node.position;
 
                         if (active_item.type === "drag_node" && active_item.target_ids.some(id=>id === node.id)) {
@@ -481,6 +486,36 @@ export const NCanvas: React.FC = () => {
                         }
 
                         const node_screen_position = transform.world_to_screen(node_position_world);
+
+                        if(node.type===GraphItemType.REROUTE){
+                            return <Reroute
+                                node_id={node.id}
+                                screen_position={node_screen_position}
+                                onClick={e=>console.log("REROUTE_CLICK")}
+                                onPointerDown={e=>console.log("REROUTE POINTER DOWN")}
+                                onPointerDownHandle={e=>{console.log("REROUTE-HANDEL POINTER DOWN")}}
+                                onPointerUpHandle={(e, handel_reference)=>{
+                                    // MARK: Reroute Handle Pointer Up
+                                    if (active_item.type === "start_edge_from_left") {
+                                        e.stopPropagation()
+                                        set_active_item({ type: "none" });
+                                        dispatch(actions.graph.add_edge({
+                                            from: active_item.source,
+                                            to: handel_reference,
+                                        }));
+                                    }else if (active_item.type === "start_edge_from_right") {
+                                        e.stopPropagation()
+                                        set_active_item({ type: "none" });
+                                        dispatch(actions.graph.add_edge({
+                                            from: handel_reference,
+                                            to: active_item.source,
+                                        }));
+                                    }
+                                }}
+                                ref={handel_refs}
+                                key={node.id}
+                            />
+                        }
 
                         let NodeType = NodeRegistry[node.registered_type];
                         

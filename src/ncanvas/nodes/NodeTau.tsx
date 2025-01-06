@@ -1,6 +1,7 @@
 import { ForwardedRef, forwardRef } from "react";
 import { NodeBody } from "./core/NodeBody.tsx";
-import { Handle, HandleRefRegistry } from "./core/Handel.tsx";
+import { Handle } from "./core/Handel.tsx";
+import { HandleRefRegistry } from "./core/HandleRefRegistry.tsx";
 import { NodeBodyRow } from "./core/NodeBodyRow.tsx";
 import { HandelType } from "../graph_types/HandelReference.ts";
 import { NodeProps } from "./core/NodeProps.ts";
@@ -13,6 +14,7 @@ export const NodeTau = forwardRef(
     ) => {
         return <NodeBody
             {...props.body_props}
+            ref={ref}
         >
             <NodeBodyRow
                 handel_right={<Handle

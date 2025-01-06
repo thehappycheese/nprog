@@ -1,4 +1,5 @@
 import { HandelReference } from "./graph_types/HandelReference";
+import { HandleRefRegistry } from "./nodes/core/HandleRefRegistry";
 import { Vector2 } from "./Vector2";
 import { ViewportTransform } from "./ViewportTransform";
 
@@ -30,11 +31,11 @@ const get_mouse_positions: (
 /**Screen position of handle */
 const get_handel_position = (
     handel_reference: HandelReference,
-    handel_refs: Record<string, Record<string, HTMLDivElement>>,
+    handel_refs: HandleRefRegistry,
     host: HTMLDivElement
 ) => {
     let host_rect = host.getBoundingClientRect();
-    let handel_rect = handel_refs?.[handel_reference.node_id]?.[handel_reference.handel_id]?.getBoundingClientRect();
+    let handel_rect = handel_refs[handel_reference.node_id]?.handles[handel_reference.handel_id]?.getBoundingClientRect();
     if (!handel_rect) {
         console.error(`Invalid Handle Reference: ${JSON.stringify(handel_reference)}`)
         return { x: 0, y: 0 };

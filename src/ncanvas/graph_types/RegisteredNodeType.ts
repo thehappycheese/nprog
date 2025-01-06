@@ -1,4 +1,4 @@
-import { HandleRefRegistry } from "../nodes/core/Handel";
+import { HandleRefRegistry } from "../nodes/core/HandleRefRegistry";
 import { NodeProps } from "../nodes/core/NodeProps";
 import { NodeAdd } from "../nodes/NodeAdd";
 import { NodeOutput } from "../nodes/NodeOutput";

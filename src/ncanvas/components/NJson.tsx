@@ -50,20 +50,20 @@ const JsonUnknown: React.FC<RenderType<string>> = ({ value, postfix, depth }) =>
     </span>;
 
 const JsonArray: React.FC<RenderType<any[]>> = ({ value, postfix }) => <>
-    <span className="n-json-paren">{"["}<br /></span>
+    <span key="a1" className="n-json-paren">{"["}<br /></span>
     {
         value.map((value, index) =>
-            <div key={index} style={{ marginLeft: `${1}em` }}>
+            <div key={"arr-"+index} style={{ marginLeft: `${1}em` }}>
                 <JsonInner
-                    key={index}
+                    key={"array-inner-"+index}
                     value={value}
-                    postfix={<><span className="n-json-delim">,</span><br /></>}
+                    postfix={<><span className="n-json-delim"  key={"inner-post-s-"+index}>,</span><br key={"inner-post-b-"+index}/></>}
                     depth={1}
                 />
             </div>
         )
     }
-    <span className="n-json-paren">{"]"}{postfix}</span>
+    <span key="a2" className="n-json-paren">{"]"}{postfix}</span>
 </>;
 
 const JsonObject: React.FC<RenderType<object>> = ({ value, postfix }) => {
@@ -84,7 +84,7 @@ const JsonObject: React.FC<RenderType<object>> = ({ value, postfix }) => {
                                 <span key={"outer-" + index} >
                                     <span className="n-json-object-key">{key}</span>
                                     <span className="n-json-delim">:&nbsp;</span>
-                                    <JsonInner key={"inner-" + index} value={value} depth={0} />
+                                    <JsonInner key={"short-object-inner-" + index} value={value} depth={0} />
                                 </span>
                             )
                         )
@@ -103,7 +103,7 @@ const JsonObject: React.FC<RenderType<object>> = ({ value, postfix }) => {
                 <div key={"outer-" + index} style={{ marginLeft: `${1}em` }}>
                     <span className="n-json-object-key">{key}</span>
                     <span className="n-json-delim">:&nbsp;</span>
-                    <JsonInner key={"inner-" + index} value={value} postfix={<span className="n-json-delim">,</span>} depth={0} />
+                    <JsonInner key={"long-object-inner-" + index} value={value} postfix={<span className="n-json-delim" key={"inner-post-"+index}>,</span>} depth={0} />
                 </div>
             )
         }
@@ -112,40 +112,32 @@ const JsonObject: React.FC<RenderType<object>> = ({ value, postfix }) => {
 };
 
 
-
-const get_thing = ({ value, depth, postfix }: { value: any, depth: number, postfix: React.ReactNode }) => {
+export const JsonInner: React.FC<RenderType<any> & {key?:string}> = ({ value, postfix, depth, key}) => {
     switch (typeof value) {
         case "number":
-            return <JsonNumber value={value} depth={depth} postfix={postfix} />
+            return <JsonNumber value={value} depth={depth} postfix={postfix} key={key} />
         case "boolean":
-            return <JsonBoolean value={value} depth={depth} postfix={postfix} />
+            return <JsonBoolean value={value} depth={depth} postfix={postfix} key={key} />
         case "string":
-            return <JsonString value={value} depth={depth} postfix={postfix} />
+            return <JsonString value={value} depth={depth} postfix={postfix} key={key} />
         case "object":
             if (Array.isArray(value)) {
-                return <JsonArray value={value} depth={depth} postfix={postfix} />
+                return <JsonArray value={value} depth={depth} postfix={postfix} key={key} />
             } else if (value === null) {
-                return <JsonNull value={null} depth={depth} postfix={postfix} />
+                return <JsonNull value={null} depth={depth} postfix={postfix} key={key} />
             } else {
-                return <JsonObject value={value} depth={depth} postfix={postfix} />
+                return <JsonObject value={value} depth={depth} postfix={postfix} key={key} />
             }
         default:
-            return <JsonUnknown value={`ERR/${value}/${typeof value}`} depth={depth} />
+            return <JsonUnknown value={`ERR/${value}/${typeof value}`} depth={depth} key={key} />
     }
 }
 
-export const JsonInner: React.FC<RenderType<any>> = ({ value, postfix, depth }) => {
-    return <>
-        {
-            get_thing({ value, depth, postfix })
-        }
-    </>
-}
 
 export const NJson: React.FC<RenderType<any> & { font_size?: number }> = ({ value, font_size: font_size_em = 1 }) => {
     return <div className="font-mono whitespace-nowrap" style={{ fontSize: `${font_size_em}em` }}>
         {
-            <JsonInner value={value} depth={1} />
+            <JsonInner value={value} depth={1} key="moog" />
         }
     </div>
 }
