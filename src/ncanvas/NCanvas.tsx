@@ -491,9 +491,9 @@ export const NCanvas: React.FC = () => {
                             return <Reroute
                                 node_id={node.id}
                                 screen_position={node_screen_position}
-                                onClick={e=>console.log("REROUTE_CLICK")}
-                                onPointerDown={e=>console.log("REROUTE POINTER DOWN")}
-                                onPointerDownHandle={e=>{console.log("REROUTE-HANDEL POINTER DOWN")}}
+                                onClick={()=>console.log("REROUTE_CLICK")}
+                                onPointerDown={()=>console.log("REROUTE POINTER DOWN")}
+                                onPointerDownHandle={()=>{console.log("REROUTE-HANDEL POINTER DOWN")}}
                                 onPointerUpHandle={(e, handel_reference)=>{
                                     // MARK: Reroute Handle Pointer Up
                                     if (active_item.type === "start_edge_from_left") {
